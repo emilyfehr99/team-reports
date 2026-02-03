@@ -123,13 +123,19 @@ class PlayerDataFetcher:
                         dm = analyzer.calculate_defensive_metrics(team_id)
                         dm_opp = analyzer.calculate_defensive_metrics(opp_id)
                         
-                        # Game Score
+                        # Game Score (returns float, not dict)
                         gs = analyzer.calculate_game_score(team_id)
                         gs_opp = analyzer.calculate_game_score(opp_id)
                         
                         # Derive Corsi from shot counts (shots + missed + blocked)
                         corsi_for = sq.get('total_shots', 0)  # This includes all shot attempts
                         corsi_against = sq_opp.get('total_shots', 0)
+                        
+                        # Safely get nested movement values
+                        lat_for = mm.get('lateral_movement', {})
+                        lat_against = mm_opp.get('lateral_movement', {})
+                        long_for = mm.get('longitudinal_movement', {})
+                        long_against = mm_opp.get('longitudinal_movement', {})
                         
                         team_metrics[team_id] = {
                             # For metrics
@@ -143,9 +149,9 @@ class PlayerDataFetcher:
                             'Rush_Shots_For': pr.get('quick_strike_opportunities', 0),
                             'ENtoS_For': tm.get('entos_entries_to_shots', 0),
                             'EXtoEN_For': tm.get('extoen_exits_to_entries', 0),
-                            'Lateral_Move_For': mm.get('lateral_movement', {}).get('avg_delta_y', 0),
-                            'Longitudinal_Move_For': mm.get('longitudinal_movement', {}).get('avg_delta_x', 0),
-                            'GameScore_For': gs.get('game_score', 0),
+                            'Lateral_Move_For': lat_for.get('avg_delta_y', 0) if isinstance(lat_for, dict) else 0,
+                            'Longitudinal_Move_For': long_for.get('avg_delta_x', 0) if isinstance(long_for, dict) else 0,
+                            'GameScore_For': gs if isinstance(gs, (int, float)) else 0,
                             'Blocks_For': dm.get('blocked_shots', 0),
                             'Hits_For': dm.get('hits', 0),
                             # Against metrics
@@ -159,9 +165,9 @@ class PlayerDataFetcher:
                             'Rush_Shots_Against': pr_opp.get('quick_strike_opportunities', 0),
                             'ENtoS_Against': tm_opp.get('entos_entries_to_shots', 0),
                             'EXtoEN_Against': tm_opp.get('extoen_exits_to_entries', 0),
-                            'Lateral_Move_Against': mm_opp.get('lateral_movement', {}).get('avg_delta_y', 0),
-                            'Longitudinal_Move_Against': mm_opp.get('longitudinal_movement', {}).get('avg_delta_x', 0),
-                            'GameScore_Against': gs_opp.get('game_score', 0),
+                            'Lateral_Move_Against': lat_against.get('avg_delta_y', 0) if isinstance(lat_against, dict) else 0,
+                            'Longitudinal_Move_Against': long_against.get('avg_delta_x', 0) if isinstance(long_against, dict) else 0,
+                            'GameScore_Against': gs_opp if isinstance(gs_opp, (int, float)) else 0,
                             'Blocks_Against': dm_opp.get('blocked_shots', 0),
                             'Hits_Against': dm_opp.get('hits', 0),
                         }
