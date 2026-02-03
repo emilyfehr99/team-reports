@@ -338,13 +338,41 @@ class PlayerDataFetcher:
             current += timedelta(days=1)
     
     def save_to_csv(self, output_path: str):
-        """Save collected data to CSV."""
+        """Save collected data to CSV, appending if file exists."""
         output = Path(output_path)
         output.parent.mkdir(parents=True, exist_ok=True)
         
-        with open(output, 'w', newline='') as f:
+        file_exists = output.exists()
+        mode = 'a' if file_exists else 'w'
+        
+        # If appending, check for duplicates to avoid re-adding satisfied games
+        if file_exists and self.rows:
+            try:
+                existing_game_ids = set()
+                with open(output, 'r', encoding='utf-8') as f:
+                    reader = csv.DictReader(f)
+                    for row in reader:
+                        if 'game_id' in row:
+                            existing_game_ids.add(row['game_id'])
+                
+                # Filter out rows that are already in the CSV
+                original_count = len(self.rows)
+                self.rows = [r for r in self.rows if str(r[0]) not in existing_game_ids]
+                filtered_count = len(self.rows)
+                
+                if original_count != filtered_count:
+                    print(f"Skipped {original_count - filtered_count} duplicate rows (games already in CSV)")
+            except Exception as e:
+                print(f"Warning: Error checking for duplicates: {e}")
+
+        if not self.rows:
+            print("No new rows to save.")
+            return
+
+        with open(output, mode, newline='') as f:
             writer = csv.writer(f)
-            writer.writerow(self.HEADERS)
+            if not file_exists:
+                writer.writerow(self.HEADERS)
             writer.writerows(self.rows)
         
         print(f"\nSaved {len(self.rows)} player-game rows to {output}")
