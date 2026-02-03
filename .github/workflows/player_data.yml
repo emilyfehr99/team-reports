@@ -1,0 +1,65 @@
+name: Fetch Player Data
+
+on:
+  schedule:
+    # Run daily at 11:00 UTC (6:00 AM EST)
+    - cron: '0 11 * * *'
+  workflow_dispatch:
+    inputs:
+      date:
+        description: 'Specific date to fetch (YYYY-MM-DD)'
+        required: false
+      backfill_start:
+        description: 'Backfill start date (YYYY-MM-DD)'
+        required: false
+      backfill_end:
+        description: 'Backfill end date (YYYY-MM-DD)'
+        required: false
+
+jobs:
+  fetch-player-data:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          
+      - name: Install dependencies
+        run: |
+          pip install requests pandas
+          
+      - name: Fetch player data
+        run: |
+          if [ -n "${{ github.event.inputs.backfill_start }}" ] && [ -n "${{ github.event.inputs.backfill_end }}" ]; then
+            echo "Running backfill from ${{ github.event.inputs.backfill_start }} to ${{ github.event.inputs.backfill_end }}"
+            python fetch_player_data.py --start ${{ github.event.inputs.backfill_start }} --end ${{ github.event.inputs.backfill_end }}
+          elif [ -n "${{ github.event.inputs.date }}" ]; then
+            echo "Fetching data for specific date: ${{ github.event.inputs.date }}"
+            python fetch_player_data.py --date ${{ github.event.inputs.date }}
+          else
+            echo "Fetching yesterday's games"
+            python fetch_player_data.py --yesterday
+          fi
+          
+      - name: Check for changes
+        id: check_changes
+        run: |
+          if git diff --quiet data/; then
+            echo "changes=false" >> $GITHUB_OUTPUT
+          else
+            echo "changes=true" >> $GITHUB_OUTPUT
+          fi
+          
+      - name: Commit and push
+        if: steps.check_changes.outputs.changes == 'true'
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add data/
+          git commit -m "Update player data - $(date +'%Y-%m-%d')"
+          git push
