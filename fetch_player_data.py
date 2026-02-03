@@ -102,100 +102,80 @@ class PlayerDataFetcher:
                 try:
                     analyzer = AdvancedMetricsAnalyzer(pbp)
                     
-                    for team_id, opp_id in [(home_id, away_id), (away_id, home_id)]:
-                        # Shot Quality (xG, shots, HDC, zone breakdowns)
-                        sq = analyzer.calculate_shot_quality_metrics(team_id)
-                        sq_opp = analyzer.calculate_shot_quality_metrics(opp_id)
-                        
-                        # Transition (ENtoS, EXtoEN)
-                        tm = analyzer.calculate_transition_metrics(team_id)
-                        tm_opp = analyzer.calculate_transition_metrics(opp_id)
-                        
-                        # Pre-Shot Movement (lateral, longitudinal)
-                        mm = analyzer.calculate_pre_shot_movement_metrics(team_id)
-                        mm_opp = analyzer.calculate_pre_shot_movement_metrics(opp_id)
-                        
-                        # Pressure (zone time, sequences)
-                        pr = analyzer.calculate_pressure_metrics(team_id)
-                        pr_opp = analyzer.calculate_pressure_metrics(opp_id)
-                        
-                        # Defensive Metrics
-                        dm = analyzer.calculate_defensive_metrics(team_id)
-                        dm_opp = analyzer.calculate_defensive_metrics(opp_id)
-                        
-                        # Game Score (returns float, not dict)
-                        gs = analyzer.calculate_game_score(team_id)
-                        gs_opp = analyzer.calculate_game_score(opp_id)
-                        
-                        # Derive Corsi from shot counts (shots + missed + blocked)
-                        corsi_for = sq.get('total_shots', 0)  # This includes all shot attempts
-                        corsi_against = sq_opp.get('total_shots', 0)
-                        
-                        # Safely get nested movement values
-                        lat_for = mm.get('lateral_movement', {})
-                        lat_against = mm_opp.get('lateral_movement', {})
-                        long_for = mm.get('longitudinal_movement', {})
-                        long_against = mm_opp.get('longitudinal_movement', {})
-                        
-                        team_metrics[team_id] = {
-                            # For metrics
-                            'xG_For': sq.get('expected_goals', 0),
-                            'Shots_For': sq.get('shots_on_goal', 0),
-                            'HDC_For': sq.get('high_danger_shots', 0),
-                            'Corsi_For': corsi_for,
-                            'OZ_Shots_For': sq.get('shot_locations', {}).get('O', 0),
-                            'NZ_Shots_For': sq.get('shot_locations', {}).get('N', 0),
-                            'DZ_Shots_For': sq.get('shot_locations', {}).get('D', 0),
-                            'Rush_Shots_For': pr.get('quick_strike_opportunities', 0),
-                            'ENtoS_For': tm.get('entos_entries_to_shots', 0),
-                            'EXtoEN_For': tm.get('extoen_exits_to_entries', 0),
-                            'Lateral_Move_For': lat_for.get('avg_delta_y', 0) if isinstance(lat_for, dict) else 0,
-                            'Longitudinal_Move_For': long_for.get('avg_delta_x', 0) if isinstance(long_for, dict) else 0,
-                            'GameScore_For': gs if isinstance(gs, (int, float)) else 0,
-                            'Blocks_For': dm.get('blocked_shots', 0),
-                            'Hits_For': dm.get('hits', 0),
-                            # Against metrics
-                            'xG_Against': sq_opp.get('expected_goals', 0),
-                            'Shots_Against': sq_opp.get('shots_on_goal', 0),
-                            'HDC_Against': sq_opp.get('high_danger_shots', 0),
-                            'Corsi_Against': corsi_against,
-                            'OZ_Shots_Against': sq_opp.get('shot_locations', {}).get('O', 0),
-                            'NZ_Shots_Against': sq_opp.get('shot_locations', {}).get('N', 0),
-                            'DZ_Shots_Against': sq_opp.get('shot_locations', {}).get('D', 0),
-                            'Rush_Shots_Against': pr_opp.get('quick_strike_opportunities', 0),
-                            'ENtoS_Against': tm_opp.get('entos_entries_to_shots', 0),
-                            'EXtoEN_Against': tm_opp.get('extoen_exits_to_entries', 0),
-                            'Lateral_Move_Against': lat_against.get('avg_delta_y', 0) if isinstance(lat_against, dict) else 0,
-                            'Longitudinal_Move_Against': long_against.get('avg_delta_x', 0) if isinstance(long_against, dict) else 0,
-                            'GameScore_Against': gs_opp if isinstance(gs_opp, (int, float)) else 0,
-                            'Blocks_Against': dm_opp.get('blocked_shots', 0),
-                            'Hits_Against': dm_opp.get('hits', 0),
-                        }
-                except Exception as e:
-                    print(f"    Warning: Could not calculate advanced metrics: {e}")
-            
-            # Process players
-            player_by_game_stats = boxscore.get('playerByGameStats', {})
-            
-            for team_key in ['homeTeam', 'awayTeam']:
-                team_data = boxscore.get(team_key, {})
-                team_abbrev = team_data.get('abbrev', '')
-                team_id = home_id if team_key == 'homeTeam' else away_id
-                opp_id = away_id if team_key == 'homeTeam' else home_id
-                opponent = away_team if team_key == 'homeTeam' else home_team
-                home_away = 'H' if team_key == 'homeTeam' else 'A'
-                team_gf = home_score if team_key == 'homeTeam' else away_score
-                team_ga = away_score if team_key == 'homeTeam' else home_score
-                
-                player_stats = player_by_game_stats.get(team_key, {})
-                tm = team_metrics.get(team_id, {})
-                
+                # Calculate base team/opponent metrics for context (e.g. Corsi Against needs opponent total)
+                team_sq = analyzer.calculate_shot_quality_metrics(team_id)
+                opp_sq = analyzer.calculate_shot_quality_metrics(opp_id)
+                team_tm = analyzer.calculate_transition_metrics(team_id)
+                opp_tm = analyzer.calculate_transition_metrics(opp_id)
+                team_mm = analyzer.calculate_pre_shot_movement_metrics(team_id)
+                opp_mm = analyzer.calculate_pre_shot_movement_metrics(opp_id)
+                team_pr = analyzer.calculate_pressure_metrics(team_id)
+                opp_pr = analyzer.calculate_pressure_metrics(opp_id)
+                team_dm = analyzer.calculate_defensive_metrics(team_id)
+                opp_dm = analyzer.calculate_defensive_metrics(opp_id)
+                team_gs = analyzer.calculate_game_score(team_id)
+                opp_gs = analyzer.calculate_game_score(opp_id)
+
                 # Process skaters
                 for player in player_stats.get('forwards', []) + player_stats.get('defense', []):
+                    player_id = player.get('playerId')
+                    
+                    # Calculate INDIVIDUAL metrics
+                    p_sq = analyzer.calculate_shot_quality_metrics(team_id, player_id=player_id)
+                    p_tm = analyzer.calculate_transition_metrics(team_id, player_id=player_id)
+                    p_mm = analyzer.calculate_pre_shot_movement_metrics(team_id, player_id=player_id)
+                    p_pr = analyzer.calculate_pressure_metrics(team_id, player_id=player_id)
+                    p_dm = analyzer.calculate_defensive_metrics(team_id, player_id=player_id)
+                    p_gs = analyzer.calculate_game_score(team_id, player_id=player_id)
+                    
+                    # Package individual metrics
+                    player_metrics = {
+                        # For metrics (Individual)
+                        'xG_For': p_sq.get('expected_goals', 0),
+                        'Shots_For': p_sq.get('shots_on_goal', 0),
+                        'HDC_For': p_sq.get('high_danger_shots', 0),
+                        'Corsi_For': p_sq.get('total_shots', 0), # Individual Corsi (iCorsi)
+                        'OZ_Shots_For': p_sq.get('shot_locations', {}).get('O', 0),
+                        'NZ_Shots_For': p_sq.get('shot_locations', {}).get('N', 0),
+                        'DZ_Shots_For': p_sq.get('shot_locations', {}).get('D', 0),
+                        'Rush_Shots_For': p_pr.get('quick_strike_opportunities', 0),
+                        'ENtoS_For': p_tm.get('entos_entries_to_shots', 0),
+                        'EXtoEN_For': p_tm.get('extoen_exits_to_entries', 0),
+                        'Lateral_Move_For': p_mm.get('lateral_movement', {}).get('avg_delta_y', 0) if isinstance(p_mm.get('lateral_movement'), dict) else 0,
+                        'Longitudinal_Move_For': p_mm.get('longitudinal_movement', {}).get('avg_delta_x', 0) if isinstance(p_mm.get('longitudinal_movement'), dict) else 0,
+                        'GameScore_For': p_gs if isinstance(p_gs, (int, float)) else 0,
+                        # Defense (Individual Blocks/Hits)
+                        'Blocks_For': p_dm.get('blocked_shots', 0),
+                        'Hits_For': p_dm.get('hits', 0),
+                        
+                        # Against metrics (Team Context while on ice? No, we don't have shift data).
+                        # We will use TEAM totals for "Against" context columns for now as placeholders,
+                        # OR zero them out since they are misleading as individual stats without ON-ICE context.
+                        # The user asked for "Team" vs "Opponent" usually implies on-ice.
+                        # Without shift data, we CANNOT calculate true "Against" metrics for a specific player.
+                        # We will populate these with OPPONENT TEAM totals to provide game context, 
+                        # but label/understand them as Team-Level Against context.
+                        'xG_Against': opp_sq.get('expected_goals', 0),
+                        'Shots_Against': opp_sq.get('shots_on_goal', 0),
+                        'HDC_Against': opp_sq.get('high_danger_shots', 0),
+                        'Corsi_Against': opp_sq.get('total_shots', 0),
+                        'OZ_Shots_Against': opp_sq.get('shot_locations', {}).get('O', 0),
+                        'NZ_Shots_Against': opp_sq.get('shot_locations', {}).get('N', 0),
+                        'DZ_Shots_Against': opp_sq.get('shot_locations', {}).get('D', 0),
+                        'Rush_Shots_Against': opp_pr.get('quick_strike_opportunities', 0),
+                        'ENtoS_Against': opp_tm.get('entos_entries_to_shots', 0),
+                        'EXtoEN_Against': opp_tm.get('extoen_exits_to_entries', 0),
+                        'Lateral_Move_Against': opp_mm.get('lateral_movement', {}).get('avg_delta_y', 0) if isinstance(opp_mm.get('lateral_movement'), dict) else 0,
+                        'Longitudinal_Move_Against': opp_mm.get('longitudinal_movement', {}).get('avg_delta_x', 0) if isinstance(opp_mm.get('longitudinal_movement'), dict) else 0,
+                        'GameScore_Against': opp_gs if isinstance(opp_gs, (int, float)) else 0,
+                        'Blocks_Against': opp_dm.get('blocked_shots', 0),
+                        'Hits_Against': opp_dm.get('hits', 0),
+                    }
+
                     self._add_player_row(
                         game_id, game_date, player, team_abbrev, opponent,
                         home_away, 'F' if player in player_stats.get('forwards', []) else 'D',
-                        tm, team_gf, team_ga, team_id
+                        player_metrics, team_gf, team_ga, team_id
                     )
                 
                 # Process goalies
