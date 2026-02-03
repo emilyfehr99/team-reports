@@ -112,6 +112,9 @@ class PlayerDataFetcher:
                         team_gf = home_score if team_key == 'homeTeam' else away_score
                         team_ga = away_score if team_key == 'homeTeam' else home_score
 
+                        # Get player stats specifically for this team
+                        current_team_stats = player_by_game_stats.get(team_key, {})
+
                         # Calculate base team/opponent metrics for context
                         # We use these for "Against" columns and for goalie GSAA
                         opp_sq = analyzer.calculate_shot_quality_metrics(opp_id)
@@ -122,7 +125,7 @@ class PlayerDataFetcher:
                         }
 
                         # Process skaters
-                        for player in player_stats.get('forwards', []) + player_stats.get('defense', []):
+                        for player in current_team_stats.get('forwards', []) + current_team_stats.get('defense', []):
                             player_id = player.get('playerId')
                             
                             # Calculate INDIVIDUAL metrics
@@ -180,12 +183,12 @@ class PlayerDataFetcher:
 
                             self._add_player_row(
                                 game_id, game_date, player, team_abbrev, opponent,
-                                home_away, 'F' if player in player_stats.get('forwards', []) else 'D',
+                                home_away, 'F' if player in current_team_stats.get('forwards', []) else 'D',
                                 player_metrics, team_gf, team_ga, team_id
                             )
                         
                         # Process goalies
-                        for player in player_stats.get('goalies', []):
+                        for player in current_team_stats.get('goalies', []):
                             self._add_goalie_row(
                                 game_id, game_date, player, team_abbrev, opponent,
                                 home_away, goalie_team_metrics, team_gf, team_ga
