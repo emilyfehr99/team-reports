@@ -32,16 +32,11 @@ class PlayerDataFetcher:
         # Basic Stats
         'toi_seconds', 'goals', 'assists', 'points', 'shots', 'hits', 'blocks', 
         'plus_minus', 'pim', 'fow', 'fol', 'fo_pct',
-        # Comprehensive Metrics - For (when player's team has possession/action)
+        # Comprehensive Metrics - For (Individual/On-Ice context)
         'GF', 'xG_For', 'Shots_For', 'HDC_For', 'Blocks_For', 'Hits_For',
         'Corsi_For', 'OZ_Shots_For', 'NZ_Shots_For', 'DZ_Shots_For', 'Rush_Shots_For',
         'ENtoS_For', 'EXtoEN_For', 'Giveaways_For', 'Takeaways_For',
         'Lateral_Move_For', 'Longitudinal_Move_For', 'GameScore_For',
-        # Comprehensive Metrics - Against (when opponent has possession/action)
-        'GA', 'xG_Against', 'Shots_Against', 'HDC_Against', 'Blocks_Against', 'Hits_Against',
-        'Corsi_Against', 'OZ_Shots_Against', 'NZ_Shots_Against', 'DZ_Shots_Against', 'Rush_Shots_Against',
-        'ENtoS_Against', 'EXtoEN_Against', 'Giveaways_Against', 'Takeaways_Against',
-        'Lateral_Move_Against', 'Longitudinal_Move_Against', 'GameScore_Against',
         # Derived Ratios
         'Corsi_Pct', 'xG_Pct'
     ]
@@ -51,6 +46,7 @@ class PlayerDataFetcher:
         self.rows = []
         
     def fetch_games_for_date(self, date_str: str) -> list:
+        # ... (unchanged)
         """Get all game IDs for a specific date."""
         game_ids = []
         try:
@@ -64,6 +60,7 @@ class PlayerDataFetcher:
         except Exception as e:
             print(f"Error fetching schedule for {date_str}: {e}")
         return game_ids
+
     
     def parse_toi(self, toi_str: str) -> int:
         """Convert MM:SS to seconds."""
@@ -207,7 +204,7 @@ class PlayerDataFetcher:
         
         except Exception as e:
             print(f"  Error in game {game_id}: {e}")
-    
+
     def _add_player_row(self, game_id, date, player, team, opponent, home_away, pos, team_metrics, team_gf, team_ga, team_id):
         """Add a skater row with comprehensive metrics."""
         player_id = player.get('playerId', 0)
@@ -228,47 +225,33 @@ class PlayerDataFetcher:
         giveaways = player.get('giveaways', 0) or 0
         takeaways = player.get('takeaways', 0) or 0
         
-        # Get team-level metrics (attributed to all on-ice players equally for now)
+        # Get team-level metrics for calculations
         xg_for = round(team_metrics.get('xG_For', 0), 3)
-        xg_against = round(team_metrics.get('xG_Against', 0), 3)
         shots_for = team_metrics.get('Shots_For', 0)
-        shots_against = team_metrics.get('Shots_Against', 0)
         hdc_for = team_metrics.get('HDC_For', 0)
-        hdc_against = team_metrics.get('HDC_Against', 0)
         blocks_for = blocks  # Individual
-        blocks_against = team_metrics.get('Blocks_Against', 0)
         hits_for = hits  # Individual
-        hits_against = team_metrics.get('Hits_Against', 0)
-        corsi_for = team_metrics.get('Corsi_For', 0)
-        corsi_against = team_metrics.get('Corsi_Against', 0)
+        corsi_for = team_metrics.get('Corsi_For', 0) # Individual
         oz_shots_for = team_metrics.get('OZ_Shots_For', 0)
-        oz_shots_against = team_metrics.get('OZ_Shots_Against', 0)
         nz_shots_for = team_metrics.get('NZ_Shots_For', 0)
-        nz_shots_against = team_metrics.get('NZ_Shots_Against', 0)
         dz_shots_for = team_metrics.get('DZ_Shots_For', 0)
-        dz_shots_against = team_metrics.get('DZ_Shots_Against', 0)
         rush_shots_for = team_metrics.get('Rush_Shots_For', 0)
-        rush_shots_against = team_metrics.get('Rush_Shots_Against', 0)
         entos_for = team_metrics.get('ENtoS_For', 0)
-        entos_against = team_metrics.get('ENtoS_Against', 0)
         extoen_for = team_metrics.get('EXtoEN_For', 0)
-        extoen_against = team_metrics.get('EXtoEN_Against', 0)
         lat_move_for = round(team_metrics.get('Lateral_Move_For', 0), 2)
-        lat_move_against = round(team_metrics.get('Lateral_Move_Against', 0), 2)
         long_move_for = round(team_metrics.get('Longitudinal_Move_For', 0), 2)
-        long_move_against = round(team_metrics.get('Longitudinal_Move_Against', 0), 2)
         
         # Game Score (standard formula)
         game_score_for = round(
             goals * 0.75 + assists * 0.7 + shots * 0.075 +
             blocks * 0.05 + hits * 0.025 + takeaways * 0.1 - giveaways * 0.15, 2
         )
-        game_score_against = team_metrics.get('GameScore_Against', 0)
         
-        # Derived ratios - Use TEAM Totals for meaningful % context (since we lack true On-Ice data)
-        # This prevents "10%" values caused by comparing Individual For vs Team Against
+        # Derived ratios - Use TEAM Totals for meaningful % context
         team_corsi_for = team_metrics.get('Team_Corsi_For', 0)
         team_xg_for = team_metrics.get('Team_xG_For', 0)
+        corsi_against = team_metrics.get('Corsi_Against', 0)
+        xg_against = team_metrics.get('xG_Against', 0)
         
         corsi_pct = round(team_corsi_for / (team_corsi_for + corsi_against) * 100, 1) if (team_corsi_for + corsi_against) > 0 else 50.0
         xg_pct = round(team_xg_for / (team_xg_for + xg_against) * 100, 1) if (team_xg_for + xg_against) > 0 else 50.0
@@ -282,12 +265,7 @@ class PlayerDataFetcher:
             corsi_for, oz_shots_for, nz_shots_for, dz_shots_for, rush_shots_for,
             entos_for, extoen_for, giveaways, takeaways,
             lat_move_for, long_move_for, game_score_for,
-            # Against metrics
-            team_ga, xg_against, shots_against, hdc_against, blocks_against, hits_against,
-            corsi_against, oz_shots_against, nz_shots_against, dz_shots_against, rush_shots_against,
-            entos_against, extoen_against, 0, 0,  # Opponent giveaways/takeaways
-            lat_move_against, long_move_against, game_score_against,
-            # Derived
+            # Derived (No Against Columns)
             corsi_pct, xg_pct
         ]
         self.rows.append(row)
