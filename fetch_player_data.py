@@ -118,10 +118,13 @@ class PlayerDataFetcher:
                         # Calculate base team/opponent metrics for context
                         # We use these for "Against" columns and for goalie GSAA
                         opp_sq = analyzer.calculate_shot_quality_metrics(opp_id)
+                        own_team_sq = analyzer.calculate_shot_quality_metrics(team_id)
                         
                         # For Goalies, we need a "team_metrics" dict that has xG_Against
                         goalie_team_metrics = {
-                            'xG_Against': opp_sq.get('expected_goals', 0)
+                            'xG_Against': opp_sq.get('expected_goals', 0),
+                            'HDC_Against': opp_sq.get('high_danger_shots', 0),
+                            'Corsi_Against': opp_sq.get('total_shots', 0)
                         }
 
                         # Process skaters
@@ -179,6 +182,11 @@ class PlayerDataFetcher:
                                 'GameScore_Against': opp_gs if isinstance(opp_gs, (int, float)) else 0,
                                 'Blocks_Against': opp_dm.get('blocked_shots', 0),
                                 'Hits_Against': opp_dm.get('hits', 0),
+                                
+                                # Team Context for percentages
+                                'Team_Corsi_For': own_team_sq.get('total_shots', 0),
+                                'Team_xG_For': own_team_sq.get('expected_goals', 0),
+                                'GameScore_Against': opp_gs if isinstance(opp_gs, (int, float)) else 0
                             }
 
                             self._add_player_row(
@@ -255,11 +263,15 @@ class PlayerDataFetcher:
             goals * 0.75 + assists * 0.7 + shots * 0.075 +
             blocks * 0.05 + hits * 0.025 + takeaways * 0.1 - giveaways * 0.15, 2
         )
-        game_score_against = 0  # Would need opponent player data
+        game_score_against = team_metrics.get('GameScore_Against', 0)
         
-        # Derived ratios
-        corsi_pct = round(corsi_for / (corsi_for + corsi_against) * 100, 1) if (corsi_for + corsi_against) > 0 else 50.0
-        xg_pct = round(xg_for / (xg_for + xg_against) * 100, 1) if (xg_for + xg_against) > 0 else 50.0
+        # Derived ratios - Use TEAM Totals for meaningful % context (since we lack true On-Ice data)
+        # This prevents "10%" values caused by comparing Individual For vs Team Against
+        team_corsi_for = team_metrics.get('Team_Corsi_For', 0)
+        team_xg_for = team_metrics.get('Team_xG_For', 0)
+        
+        corsi_pct = round(team_corsi_for / (team_corsi_for + corsi_against) * 100, 1) if (team_corsi_for + corsi_against) > 0 else 50.0
+        xg_pct = round(team_xg_for / (team_xg_for + xg_against) * 100, 1) if (team_xg_for + xg_against) > 0 else 50.0
         
         row = [
             game_id, date, player_id, name, team, opponent, home_away, pos,
