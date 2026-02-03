@@ -95,9 +95,6 @@ class PlayerDataFetcher:
             home_score = boxscore['homeTeam'].get('score', 0)
             away_score = boxscore['awayTeam'].get('score', 0)
             
-            # Calculate team-level metrics using analyzer
-            team_metrics = {home_id: {}, away_id: {}}
-            
             if pbp:
                 try:
                     analyzer = AdvancedMetricsAnalyzer(pbp)
@@ -118,9 +115,6 @@ class PlayerDataFetcher:
                         # Calculate base team/opponent metrics for context
                         # We use these for "Against" columns and for goalie GSAA
                         opp_sq = analyzer.calculate_shot_quality_metrics(opp_id)
-                        
-                        # We also calculate "Team For" metrics just for context if needed, but we rely on player specific ones primarily
-                        # team_sq = analyzer.calculate_shot_quality_metrics(team_id)
                         
                         # For Goalies, we need a "team_metrics" dict that has xG_Against
                         goalie_team_metrics = {
@@ -199,6 +193,9 @@ class PlayerDataFetcher:
                     
                 except Exception as e:
                     print(f"    Error processing game {game_id}: {e}")
+        
+        except Exception as e:
+            print(f"  Error in game {game_id}: {e}")
     
     def _add_player_row(self, game_id, date, player, team, opponent, home_away, pos, team_metrics, team_gf, team_ga, team_id):
         """Add a skater row with comprehensive metrics."""
