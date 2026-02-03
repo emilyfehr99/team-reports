@@ -125,6 +125,20 @@ class NHLAPIClient:
             return response.json()
         return None
 
+    def get_shift_charts(self, game_id):
+        """Get shift chart data (legacy API)"""
+        url = f"https://api.nhle.com/stats/rest/en/shiftcharts?cayenneExp=gameId={game_id}"
+        try:
+            response = self.session.get(url)
+            if response.status_code == 200:
+                data = response.json()
+                if 'data' in data:
+                    return data['data']
+            return None
+        except Exception as e:
+            print(f"Error fetching shifts: {e}")
+            return None
+
     def get_comprehensive_game_data(self, game_id):
         """Get comprehensive game data including boxscore and play-by-play"""
         game_center = self.get_game_center(game_id)

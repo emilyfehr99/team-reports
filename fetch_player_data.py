@@ -83,6 +83,9 @@ class PlayerDataFetcher:
             boxscore = data['boxscore']
             pbp = data.get('play_by_play', {})
             
+            # Fetch Shift Data (Legacy API)
+            shifts = self.api.get_shift_charts(str(game_id))
+            
             # Get game info
             game_date = boxscore.get('gameDate', '')[:10]
             home_team = boxscore['homeTeam']['abbrev']
@@ -94,7 +97,8 @@ class PlayerDataFetcher:
             
             if pbp:
                 try:
-                    analyzer = AdvancedMetricsAnalyzer(pbp)
+                    # Pass shifts to Analyzer
+                    analyzer = AdvancedMetricsAnalyzer(pbp, shifts)
                     
                     # Process players
                     player_by_game_stats = boxscore.get('playerByGameStats', {})
@@ -135,6 +139,9 @@ class PlayerDataFetcher:
                             p_pr = analyzer.calculate_pressure_metrics(team_id, player_id=player_id)
                             p_dm = analyzer.calculate_defensive_metrics(team_id, player_id=player_id)
                             p_gs = analyzer.calculate_game_score(team_id, player_id=player_id)
+                            
+                            # Get On-Ice Metrics
+                            on_ice = analyzer.get_on_ice_metrics_for_player(player_id)
                             
                             # Opponent context metrics (Team Level)
                             opp_tm = analyzer.calculate_transition_metrics(opp_id)
@@ -183,7 +190,13 @@ class PlayerDataFetcher:
                                 # Team Context for percentages
                                 'Team_Corsi_For': own_team_sq.get('total_shots', 0),
                                 'Team_xG_For': own_team_sq.get('expected_goals', 0),
-                                'GameScore_Against': opp_gs if isinstance(opp_gs, (int, float)) else 0
+                                'GameScore_Against': opp_gs if isinstance(opp_gs, (int, float)) else 0,
+                                
+                                # On-Ice Metrics (Specific)
+                                'OnIce_Corsi_For': on_ice['OnIce_Corsi_For'],
+                                'OnIce_Corsi_Against': on_ice['OnIce_Corsi_Against'],
+                                'OnIce_xG_For': on_ice['OnIce_xG_For'],
+                                'OnIce_xG_Against': on_ice['OnIce_xG_Against']
                             }
 
                             self._add_player_row(
@@ -247,14 +260,29 @@ class PlayerDataFetcher:
             blocks * 0.05 + hits * 0.025 + takeaways * 0.1 - giveaways * 0.15, 2
         )
         
-        # Derived ratios - Use TEAM Totals for meaningful % context
-        team_corsi_for = team_metrics.get('Team_Corsi_For', 0)
-        team_xg_for = team_metrics.get('Team_xG_For', 0)
-        corsi_against = team_metrics.get('Corsi_Against', 0)
-        xg_against = team_metrics.get('xG_Against', 0)
+        # Derived ratios - Use On-Ice Metrics if available, else fallback to Team Totals
+        on_ice_cf = team_metrics.get('OnIce_Corsi_For', 0)
+        on_ice_ca = team_metrics.get('OnIce_Corsi_Against', 0)
+        on_ice_xgf = team_metrics.get('OnIce_xG_For', 0)
+        on_ice_xga = team_metrics.get('OnIce_xG_Against', 0)
         
-        corsi_pct = round(team_corsi_for / (team_corsi_for + corsi_against) * 100, 1) if (team_corsi_for + corsi_against) > 0 else 50.0
-        xg_pct = round(team_xg_for / (team_xg_for + xg_against) * 100, 1) if (team_xg_for + xg_against) > 0 else 50.0
+        if (on_ice_cf + on_ice_ca) > 0:
+            # TRUE ON-ICE PERCENTAGE
+            corsi_pct = round(on_ice_cf / (on_ice_cf + on_ice_ca) * 100, 1)
+        else:
+            # Fallback to team context (should ideally not happen if player had shifts)
+            team_cf = team_metrics.get('Team_Corsi_For', 0)
+            team_ca = team_metrics.get('Corsi_Against', 0)
+            corsi_pct = round(team_cf / (team_cf + team_ca) * 100, 1) if (team_cf + team_ca) > 0 else 50.0
+
+        if (on_ice_xgf + on_ice_xga) > 0:
+            # TRUE ON-ICE PERCENTAGE
+            xg_pct = round(on_ice_xgf / (on_ice_xgf + on_ice_xga) * 100, 1)
+        else:
+             # Fallback
+            team_xgf = team_metrics.get('Team_xG_For', 0)
+            team_xga = team_metrics.get('xG_Against', 0)
+            xg_pct = round(team_xgf / (team_xgf + team_xga) * 100, 1) if (team_xgf + team_xga) > 0 else 50.0
         
         row = [
             game_id, date, player_id, name, team, opponent, home_away, pos,

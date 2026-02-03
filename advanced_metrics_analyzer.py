@@ -13,11 +13,83 @@ from typing import Dict, List, Tuple, Optional
 from improved_xg_model import ImprovedXGModel
 
 class AdvancedMetricsAnalyzer:
-    def __init__(self, play_by_play_data: dict):
+    def __init__(self, play_by_play_data: dict, shifts_data: list = None):
         self.plays = play_by_play_data.get('plays', [])
         self.roster_map = self._create_roster_map(play_by_play_data)
-        self.xg_model = ImprovedXGModel()  # Initialize improved xG model
+        self.xg_model = ImprovedXGModel()
+        self.shifts_data = shifts_data
+        self.on_ice_cache = {} # cache parsed shifts
         
+        # Pre-process on-ice metrics if shifts are available
+        self.player_on_ice_stats = defaultdict(lambda: {'CF': 0, 'CA': 0, 'xGF': 0.0, 'xGA': 0.0})
+        if self.shifts_data:
+            self._process_on_ice_stats()
+
+    def _process_on_ice_stats(self):
+        """Calculate on-ice metrics for all players using shift data."""
+        # 1. Parse shifts into efficient lookup
+        # lookup[period] = [(start_sec, end_sec, player_id, team_id), ...]
+        shift_lookup = defaultdict(list)
+        for shift in self.shifts_data:
+            try:
+                period = int(shift['period'])
+                start = self._time_to_seconds(shift['startTime'])
+                end = self._time_to_seconds(shift['endTime'])
+                pid = shift['playerId']
+                tid = shift['teamId']
+                shift_lookup[period].append((start, end, pid, tid))
+            except:
+                continue
+        
+        # 2. Iterate plays
+        for play in self.plays:
+            event_type = play.get('typeDescKey', '')
+            if event_type not in ['shot-on-goal', 'missed-shot', 'blocked-shot', 'goal']:
+                continue
+                
+            details = play.get('details', {})
+            event_team_id = details.get('eventOwnerTeamId')
+            time_str = play.get('timeInPeriod', '00:00')
+            play_time = self._time_to_seconds(time_str)
+            period = play.get('periodDescriptor', {}).get('number', 0)
+            
+            # Calculate xG for this event (reuse or recalc)
+            x_coord = details.get('xCoord', 0)
+            y_coord = details.get('yCoord', 0)
+            zone = details.get('zoneCode', '')
+            shot_type = details.get('shotType', 'unknown')
+            
+            xg_val = 0.0
+            if event_type in ['shot-on-goal', 'goal']:
+                xg_val = self._calculate_single_shot_xG(x_coord, y_coord, zone, shot_type, event_type)
+            elif event_type == 'missed-shot':
+                 xg_val = self._calculate_single_shot_xG(x_coord, y_coord, zone, shot_type, event_type)
+                 # Missed shots have some xG value in this model
+            
+            # Find players on ice
+            shifts_in_period = shift_lookup.get(period, [])
+            for start, end, pid, tid in shifts_in_period:
+                if start <= play_time <= end:
+                    # Player is on ice
+                    if tid == event_team_id:
+                        # For
+                        self.player_on_ice_stats[pid]['CF'] += 1
+                        self.player_on_ice_stats[pid]['xGF'] += xg_val
+                    else:
+                        # Against
+                        self.player_on_ice_stats[pid]['CA'] += 1
+                        self.player_on_ice_stats[pid]['xGA'] += xg_val
+
+    def get_on_ice_metrics_for_player(self, player_id) -> dict:
+        """Return cached on-ice metrics for specific player."""
+        stats = self.player_on_ice_stats.get(player_id, {'CF': 0, 'CA': 0, 'xGF': 0.0, 'xGA': 0.0})
+        return {
+            'OnIce_Corsi_For': stats['CF'],
+            'OnIce_Corsi_Against': stats['CA'],
+            'OnIce_xG_For': round(stats['xGF'], 2),
+            'OnIce_xG_Against': round(stats['xGA'], 2)
+        }
+    
     def _create_roster_map(self, play_by_play_data: dict) -> dict:
         """Create a mapping of player IDs to player info"""
         roster_map = {}
