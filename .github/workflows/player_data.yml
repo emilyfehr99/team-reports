@@ -19,6 +19,9 @@ on:
         description: 'Custom date (only if mode=custom_date, YYYY-MM-DD)'
         required: false
 
+permissions:
+  contents: write
+
 jobs:
   fetch-player-data:
     runs-on: ubuntu-latest
