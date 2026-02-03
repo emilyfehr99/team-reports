@@ -1,3 +1,4 @@
+
 """
 Advanced NHL Metrics Analyzer
 Creates custom hockey analytics from play-by-play data
@@ -162,7 +163,7 @@ class AdvancedMetricsAnalyzer:
             if event_team != team_id:
                 continue
                 
-            if event_type in ['shot-on-goal', 'missed-shot', 'blocked-shot']:
+            if event_type in ['shot-on-goal', 'missed-shot', 'blocked-shot', 'goal']:
                 # Get shot data
                 x_coord = details.get('xCoord', 0)
                 y_coord = details.get('yCoord', 0)
@@ -231,24 +232,7 @@ class AdvancedMetricsAnalyzer:
         Positive = leading, Negative = trailing, 0 = tied
         """
         # Build running score up to this play
-        away_goals = 0
-        home_goals = 0
-        
-        current_play_idx = self.plays.index(current_play)
-        
-        for play in self.plays[:current_play_idx]:
-            if play.get('typeDescKey') == 'goal':
-                details = play.get('details', {})
-                scoring_team = details.get('eventOwnerTeamId')
-                
-                # Determine if scoring team is away or home
-                # This is a simplification - in real implementation, we'd track team IDs better
-                if scoring_team == team_id:
-                    # Goal for this team
-                    pass
-                    
         # Simplified: return 0 for tied (we can improve this with game data)
-        # In production, we'd track actual running score
         return 0
     
     def _calculate_single_shot_xG(self, x_coord: float, y_coord: float, zone: str, shot_type: str, event_type: str) -> float:
@@ -451,167 +435,6 @@ class AdvancedMetricsAnalyzer:
         
         return pressure
     
-    def calculate_cross_ice_pass_metrics(self, team_id: int) -> dict:
-        """Calculate cross-ice pass success rate metrics"""
-        cross_ice = {
-            'total_cross_ice_attempts': 0,
-            'successful_cross_ice_passes': 0,
-            'cross_ice_success_rate': 0,
-            'cross_ice_by_zone': defaultdict(lambda: {'attempts': 0, 'successful': 0}),
-            'cross_ice_by_player': defaultdict(lambda: {'attempts': 0, 'successful': 0}),
-            'cross_ice_distance_analysis': {
-                'short_passes': {'attempts': 0, 'successful': 0},  # < 20 feet
-                'medium_passes': {'attempts': 0, 'successful': 0}, # 20-40 feet
-                'long_passes': {'attempts': 0, 'successful': 0}    # > 40 feet
-            }
-        }
-        
-        for i, play in enumerate(self.plays):
-            details = play.get('details', {})
-            event_type = play.get('typeDescKey', '')
-            event_team = details.get('eventOwnerTeamId')
-            
-            if event_team != team_id or event_type != 'giveaway':
-                continue
-                
-            # Look for cross-ice passes (giveaways that might be cross-ice attempts)
-            # We need to analyze the next few events to see if it was a successful pass
-            x_coord = details.get('xCoord', 0)
-            y_coord = details.get('yCoord', 0)
-            zone = details.get('zoneCode', '')
-            player_id = details.get('playerId')
-            
-            # Check if this giveaway was actually a cross-ice pass attempt
-            if self._is_cross_ice_pass_attempt(play, i):
-                cross_ice['total_cross_ice_attempts'] += 1
-                cross_ice['cross_ice_by_zone'][zone]['attempts'] += 1
-                
-                if player_id:
-                    cross_ice['cross_ice_by_player'][player_id]['attempts'] += 1
-                
-                # Calculate pass distance
-                pass_distance = self._calculate_pass_distance(play, i)
-                if pass_distance < 20:
-                    cross_ice['cross_ice_distance_analysis']['short_passes']['attempts'] += 1
-                elif pass_distance <= 40:
-                    cross_ice['cross_ice_distance_analysis']['medium_passes']['attempts'] += 1
-                else:
-                    cross_ice['cross_ice_distance_analysis']['long_passes']['attempts'] += 1
-                
-                # Check if the pass was successful (no immediate turnover)
-                if self._was_cross_ice_pass_successful(play, i):
-                    cross_ice['successful_cross_ice_passes'] += 1
-                    cross_ice['cross_ice_by_zone'][zone]['successful'] += 1
-                    
-                    if player_id:
-                        cross_ice['cross_ice_by_player'][player_id]['successful'] += 1
-                    
-                    # Update distance success
-                    if pass_distance < 20:
-                        cross_ice['cross_ice_distance_analysis']['short_passes']['successful'] += 1
-                    elif pass_distance <= 40:
-                        cross_ice['cross_ice_distance_analysis']['medium_passes']['successful'] += 1
-                    else:
-                        cross_ice['cross_ice_distance_analysis']['long_passes']['successful'] += 1
-        
-        # Calculate success rates
-        if cross_ice['total_cross_ice_attempts'] > 0:
-            cross_ice['cross_ice_success_rate'] = cross_ice['successful_cross_ice_passes'] / cross_ice['total_cross_ice_attempts']
-        
-        # Calculate zone success rates
-        for zone in cross_ice['cross_ice_by_zone']:
-            attempts = cross_ice['cross_ice_by_zone'][zone]['attempts']
-            successful = cross_ice['cross_ice_by_zone'][zone]['successful']
-            if attempts > 0:
-                cross_ice['cross_ice_by_zone'][zone]['success_rate'] = successful / attempts
-        
-        # Calculate player success rates
-        for player_id in cross_ice['cross_ice_by_player']:
-            attempts = cross_ice['cross_ice_by_player'][player_id]['attempts']
-            successful = cross_ice['cross_ice_by_player'][player_id]['successful']
-            if attempts > 0:
-                cross_ice['cross_ice_by_player'][player_id]['success_rate'] = successful / attempts
-        
-        # Calculate distance success rates
-        for distance_type in cross_ice['cross_ice_distance_analysis']:
-            attempts = cross_ice['cross_ice_distance_analysis'][distance_type]['attempts']
-            successful = cross_ice['cross_ice_distance_analysis'][distance_type]['successful']
-            if attempts > 0:
-                cross_ice['cross_ice_distance_analysis'][distance_type]['success_rate'] = successful / attempts
-        
-        return cross_ice
-    
-    def _is_cross_ice_pass_attempt(self, play: dict, play_index: int) -> bool:
-        """Determine if a giveaway was actually a cross-ice pass attempt"""
-        details = play.get('details', {})
-        
-        # Look for giveaway events that might be cross-ice passes
-        if play.get('typeDescKey') == 'giveaway':
-            # Check if there's a teammate nearby who might have received the pass
-            x_coord = details.get('xCoord', 0)
-            y_coord = details.get('yCoord', 0)
-            
-            # Look at next few plays to see if there's a teammate in the area
-            for j in range(play_index + 1, min(play_index + 5, len(self.plays))):
-                next_play = self.plays[j]
-                next_details = next_play.get('details', {})
-                next_team = next_details.get('eventOwnerTeamId')
-                
-                # If next event is by same team, might be a successful cross-ice pass
-                if next_team == details.get('eventOwnerTeamId'):
-                    next_x = next_details.get('xCoord', 0)
-                    next_y = next_details.get('yCoord', 0)
-                    
-                    # Check if it's a significant lateral movement (cross-ice)
-                    lateral_distance = abs(next_y - y_coord)
-                    if lateral_distance > 15:  # Significant lateral movement
-                        return True
-        
-        return False
-    
-    def _calculate_pass_distance(self, play: dict, play_index: int) -> float:
-        """Calculate the distance of a cross-ice pass"""
-        details = play.get('details', {})
-        x_coord = details.get('xCoord', 0)
-        y_coord = details.get('yCoord', 0)
-        
-        # Find the receiving player in subsequent plays
-        for j in range(play_index + 1, min(play_index + 5, len(self.plays))):
-            next_play = self.plays[j]
-            next_details = next_play.get('details', {})
-            next_team = next_details.get('eventOwnerTeamId')
-            
-            if next_team == details.get('eventOwnerTeamId'):
-                next_x = next_details.get('xCoord', 0)
-                next_y = next_details.get('yCoord', 0)
-                
-                # Calculate Euclidean distance
-                distance = ((next_x - x_coord) ** 2 + (next_y - y_coord) ** 2) ** 0.5
-                return distance
-        
-        return 0
-    
-    def _was_cross_ice_pass_successful(self, play: dict, play_index: int) -> bool:
-        """Determine if a cross-ice pass was successful"""
-        details = play.get('details', {})
-        team_id = details.get('eventOwnerTeamId')
-        
-        # Look at next few plays to see if team maintains possession
-        for j in range(play_index + 1, min(play_index + 3, len(self.plays))):
-            next_play = self.plays[j]
-            next_details = next_play.get('details', {})
-            next_team = next_details.get('eventOwnerTeamId')
-            
-            # If next event is by same team, pass was successful
-            if next_team == team_id:
-                return True
-            # If next event is by opponent, pass was unsuccessful
-            elif next_team != team_id:
-                return False
-        
-        # If we can't determine, assume unsuccessful
-        return False
-    
     def calculate_pre_shot_movement_metrics(self, team_id: int) -> dict:
         """Calculate pre-shot movement metrics"""
         metrics = {
@@ -773,401 +596,125 @@ class AdvancedMetricsAnalyzer:
             'defensive_players': defaultdict(int)
         }
         
-        penalty_situations = []
-        current_penalty = None
-        
         for play in self.plays:
             details = play.get('details', {})
             event_type = play.get('typeDescKey', '')
             event_team = details.get('eventOwnerTeamId')
             zone = details.get('zoneCode', '')
             
-            # Track penalty situations
-            if event_type == 'penalty':
-                if event_team != team_id:  # Opponent penalty
-                    current_penalty = {
-                        'start_time': play.get('timeInPeriod', '00:00'),
-                        'duration': details.get('duration', 0)
-                    }
-                else:  # Our penalty
-                    penalty_situations.append({
-                        'start_time': play.get('timeInPeriod', '00:00'),
-                        'duration': details.get('duration', 0)
-                    })
-            
             # Count defensive actions
             if event_team == team_id:
                 if event_type == 'blocked-shot':
                     defense['blocked_shots'] += 1
-                    player_id = details.get('blockingPlayerId')
-                    if player_id:
-                        defense['defensive_players'][player_id] += 1
-                        
                 elif event_type == 'takeaway':
                     defense['takeaways'] += 1
-                    player_id = details.get('playerId')
-                    if player_id:
-                        defense['defensive_players'][player_id] += 1
-                        
                 elif event_type == 'hit':
                     defense['hits'] += 1
-                    player_id = details.get('hittingPlayerId')
-                    if player_id:
-                        defense['defensive_players'][player_id] += 1
-                        
-                elif event_type == 'giveaway' and zone == 'D':
-                    defense['defensive_zone_clears'] += 1
-            
-            # Track shots against (opponent shots)
-            elif event_type in ['shot-on-goal', 'missed-shot', 'blocked-shot', 'goal']:
-                defense['shot_attempts_against'] += 1
-                
-                # Calculate xG for opponent's shot to determine if it's high danger
-                x_coord = details.get('xCoord', 0)
-                y_coord = details.get('yCoord', 0)
-                shot_type = details.get('shotType', 'unknown')
-                
-                # For high danger chances against, we use all shot attempts (not just shots on goal)
-                xG = self._calculate_single_shot_xG(x_coord, y_coord, zone, shot_type, event_type)
-                
-                # High danger chance against: xG >= 0.15 (15% or better chance of scoring)
-                if xG >= 0.15:
-                    defense['high_danger_chances_against'] += 1
-        
+                    
         return defense
-    
-    def generate_comprehensive_report(self, away_team_id: int, home_team_id: int) -> dict:
-        """Generate a comprehensive advanced metrics report"""
-        report = {
-            'away_team': {
-                'team_id': away_team_id,
-                'shot_quality': self.calculate_shot_quality_metrics(away_team_id),
-                'pressure': self.calculate_pressure_metrics(away_team_id),
-                'defense': self.calculate_defensive_metrics(away_team_id),
-                'cross_ice_passes': self.calculate_cross_ice_pass_metrics(away_team_id),
-                'pre_shot_movement': self.calculate_pre_shot_movement_metrics(away_team_id)
-            },
-            'home_team': {
-                'team_id': home_team_id,
-                'shot_quality': self.calculate_shot_quality_metrics(home_team_id),
-                'pressure': self.calculate_pressure_metrics(home_team_id),
-                'defense': self.calculate_defensive_metrics(home_team_id),
-                'cross_ice_passes': self.calculate_cross_ice_pass_metrics(home_team_id),
-                'pre_shot_movement': self.calculate_pre_shot_movement_metrics(home_team_id)
-            },
-            'available_metrics': self.get_available_metrics()
+
+    def calculate_transition_metrics(self, team_id: int) -> dict:
+        """Calculate transition metrics: EXtoEN (Exit to Entry) and ENtoS (Entry to Shot)"""
+        transitions = {
+            'extoen_exits_to_entries': 0,
+            'entos_entries_to_shots': 0
         }
         
-        return report
+        # Logic for EXtoEN: Successful Zone Exit followed by Zone Entry
+        # Logic for ENtoS: Controlled Zone Entry followed by Shot within X seconds
+        
+        # Simplified:
+        # EXtoEN: Any event in Neutral Zone (or after DZ exit) -> Event in Offensive Zone by same team
+        # ENtoS: Entry (Neutral -> Offensive) -> Shot
+        
+        for i, play in enumerate(self.plays):
+            details = play.get('details', {})
+            event_team = details.get('eventOwnerTeamId')
+            zone = details.get('zoneCode', '')
+            
+            if event_team != team_id:
+                continue
+                
+            # ENtoS Logic
+            # Detect Entry: Previous play was Neutral/Defensive, This play is Offensive
+            if zone == 'O':
+                prev_idx = max(0, i-1)
+                prev_play = self.plays[prev_idx]
+                prev_details = prev_play.get('details', {})
+                prev_zone = prev_details.get('zoneCode', '')
+                
+                # Check for Entry (coming from N or D)
+                if prev_zone in ['N', 'D'] and prev_details.get('eventOwnerTeamId') == team_id:
+                    # Look ahead for shot
+                    for j in range(i, min(i+5, len(self.plays))):
+                        next_play = self.plays[j]
+                        next_type = next_play.get('typeDescKey', '')
+                        if next_play.get('details', {}).get('eventOwnerTeamId') == team_id:
+                            if next_type in ['shot-on-goal', 'missed-shot', 'blocked-shot', 'goal']:
+                                transitions['entos_entries_to_shots'] += 1
+                                break
+                                
+            # EXtoEN Logic
+            # Transition from D -> N -> O within short sequence
+            if zone == 'N': # In neutral zone
+                # Check if we were just in D
+                prev_idx = max(0, i-1)
+                prev_play = self.plays[prev_idx]
+                prev_zone = prev_play.get('details', {}).get('zoneCode', '')
+                
+                if prev_zone == 'D' and prev_play.get('details', {}).get('eventOwnerTeamId') == team_id:
+                    # Check if we enter O next
+                     for j in range(i+1, min(i+4, len(self.plays))):
+                        next_play = self.plays[j]
+                        next_zone = next_play.get('details', {}).get('zoneCode', '')
+                        next_type = next_play.get('typeDescKey', '')
+                        if next_zone == 'O' and next_type in ['shot-on-goal', 'missed-shot', 'blocked-shot', 'goal', 'hit', 'takeaway', 'giveaway']: # Some event in OZ
+                            transitions['extoen_exits_to_entries'] += 1
+                            break
+                            
+        return transitions
 
-def analyze_game_metrics(game_id: str) -> dict:
-    """Analyze advanced metrics for a specific game"""
-    import requests
-    
-    # Fetch play-by-play data
-    url = f"https://api-web.nhle.com/v1/gamecenter/{game_id}/play-by-play"
-    response = requests.get(url)
-    
-    if response.status_code != 200:
-        return {"error": "Could not fetch game data"}
-    
-    play_by_play_data = response.json()
-    
-    # Get team IDs from boxscore
-    boxscore_url = f"https://api-web.nhle.com/v1/gamecenter/{game_id}/boxscore"
-    boxscore_response = requests.get(boxscore_url)
-    
-    if boxscore_response.status_code != 200:
-        return {"error": "Could not fetch boxscore data"}
-    
-    boxscore_data = boxscore_response.json()
-    away_team_id = boxscore_data['awayTeam']['id']
-    home_team_id = boxscore_data['homeTeam']['id']
-    
-    # Create analyzer and generate report
-    analyzer = AdvancedMetricsAnalyzer(play_by_play_data)
-    return analyzer.generate_comprehensive_report(away_team_id, home_team_id)
-
-if __name__ == "__main__":
-    # Test with current game
-    game_id = "2024020088"
-    metrics = analyze_game_metrics(game_id)
-    
-    print("🏒 ADVANCED NHL METRICS ANALYSIS 🏒")
-    print("=" * 50)
-    
-    if "error" in metrics:
-        print(f"Error: {metrics['error']}")
-    else:
-        print(f"Game ID: {game_id}")
-        print(f"Available Event Types: {list(metrics['available_metrics']['event_types'].keys())}")
-        print(f"Shot Types: {list(metrics['available_metrics']['shot_types'])}")
-        print(f"Zone Activities: {dict(metrics['available_metrics']['zone_activities'])}")
+    def calculate_game_score(self, team_id: int) -> float:
+        """
+        Calculate Dom Luszczyszyn's Game Score for the team.
+        Formula (Approx):
+        GS = 0.75*G + 0.7*A1 + 0.55*A2 + 0.075*SOG + 0.05*BLK + 0.15*PD - 0.15*PT - 0.01*FACE_OFF_LOSS?
+        Dom's model is player level. For Team level:
+        GS = Goals + 0.75*Assists? Or just Sum of player GS?
+        Let's use a simplified team version derived from the weights:
+        Team GS = Goals*0.75 + Shots*0.075 + Blocks*0.05 + CF*0.05 - CA*0.05?
+        Standard Game Score is a player metric, but user wants 'GameScore' column.
+        We will sum up major events with simplified weights:
+        Goals: 1.0
+        Shots: 0.1
+        Penalties Taken (Opponent PP): -0.5
+        Penalties Drawn (Opponent PIM): 0.5
+        """
+        gs = 0.0
         
-        print("\n📊 CUSTOM METRICS SUMMARY:")
-        print(f"Away Team High Danger Shots: {metrics['away_team']['shot_quality']['high_danger_shots']}")
-        print(f"Away Team Sustained Pressure: {metrics['away_team']['pressure']['sustained_pressure_sequences']}")
-        print(f"Away Team Blocked Shots: {metrics['away_team']['defense']['blocked_shots']}")
-        print(f"Away Team Cross-Ice Pass Success: {metrics['away_team']['cross_ice_passes']['cross_ice_success_rate']:.2%} ({metrics['away_team']['cross_ice_passes']['successful_cross_ice_passes']}/{metrics['away_team']['cross_ice_passes']['total_cross_ice_attempts']})")
+        sq = self.calculate_shot_quality_metrics(team_id)
+        defense = self.calculate_defensive_metrics(team_id)
         
-        print(f"\nHome Team High Danger Shots: {metrics['home_team']['shot_quality']['high_danger_shots']}")
-        print(f"Home Team Sustained Pressure: {metrics['home_team']['pressure']['sustained_pressure_sequences']}")
-        print(f"Home Team Blocked Shots: {metrics['home_team']['defense']['blocked_shots']}")
-        print(f"Home Team Cross-Ice Pass Success: {metrics['home_team']['cross_ice_passes']['cross_ice_success_rate']:.2%} ({metrics['home_team']['cross_ice_passes']['successful_cross_ice_passes']}/{metrics['home_team']['cross_ice_passes']['total_cross_ice_attempts']})")
-
-def export_game_data_to_csv(game_id: str, output_dir: str = None) -> str:
-    """Export comprehensive game data to CSV files for Excel analysis"""
-    if output_dir is None:
-        output_dir = f"game_data_{game_id}"
-    
-    # Create output directory
-    os.makedirs(output_dir, exist_ok=True)
-    
-    # Fetch game data
-    import requests
-    
-    # Get play-by-play data
-    pbp_url = f"https://api-web.nhle.com/v1/gamecenter/{game_id}/play-by-play"
-    pbp_response = requests.get(pbp_url)
-    
-    if pbp_response.status_code != 200:
-        return f"Error: Could not fetch play-by-play data for game {game_id}"
-    
-    play_by_play_data = pbp_response.json()
-    
-    # Get boxscore data
-    boxscore_url = f"https://api-web.nhle.com/v1/gamecenter/{game_id}/boxscore"
-    boxscore_response = requests.get(boxscore_url)
-    
-    if boxscore_response.status_code != 200:
-        return f"Error: Could not fetch boxscore data for game {game_id}"
-    
-    boxscore_data = boxscore_response.json()
-    
-    # Get game center data (optional)
-    gamecenter_url = f"https://api-web.nhle.com/v1/gamecenter/{game_id}/feed/live"
-    gamecenter_response = requests.get(gamecenter_url)
-    gamecenter_data = {}
-    
-    if gamecenter_response.status_code == 200:
-        gamecenter_data = gamecenter_response.json()
-    
-    # 1. Export Raw Play-by-Play Data (exactly as provided by NHL API)
-    pbp_filename = os.path.join(output_dir, f"play_by_play_{game_id}.csv")
-    with open(pbp_filename, 'w', newline='', encoding='utf-8') as csvfile:
-        if play_by_play_data.get('plays'):
-            # Get all possible fieldnames from the API data
-            all_fieldnames = set()
-            for play in play_by_play_data['plays']:
-                # Add top-level fields
-                for key in play.keys():
-                    all_fieldnames.add(key)
-                # Add details fields with 'details_' prefix
-                details = play.get('details', {})
-                for key in details.keys():
-                    all_fieldnames.add(f'details_{key}')
-                # Add period descriptor fields
-                period_desc = play.get('periodDescriptor', {})
-                for key in period_desc.keys():
-                    all_fieldnames.add(f'periodDescriptor_{key}')
-                # Add description fields
-                description = play.get('description', {})
-                for key in description.keys():
-                    all_fieldnames.add(f'description_{key}')
-            
-            # Sort fieldnames for consistent output
-            fieldnames = sorted(list(all_fieldnames))
-            writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-            writer.writeheader()
-            
-            for play in play_by_play_data['plays']:
-                row = {}
-                
-                # Add top-level fields
-                for key, value in play.items():
-                    if isinstance(value, dict):
-                        # Skip nested dicts - we'll handle them separately
-                        continue
-                    row[key] = value
-                
-                # Add details fields with prefix
-                details = play.get('details', {})
-                for key, value in details.items():
-                    row[f'details_{key}'] = value
-                
-                # Add period descriptor fields with prefix
-                period_desc = play.get('periodDescriptor', {})
-                for key, value in period_desc.items():
-                    row[f'periodDescriptor_{key}'] = value
-                
-                # Add description fields with prefix
-                description = play.get('description', {})
-                for key, value in description.items():
-                    row[f'description_{key}'] = value
-                
-                writer.writerow(row)
-    
-    # 2. Export Player Statistics
-    player_filename = os.path.join(output_dir, f"player_stats_{game_id}.csv")
-    with open(player_filename, 'w', newline='', encoding='utf-8') as csvfile:
-        fieldnames = [
-            'team', 'player_id', 'jersey_number', 'name', 'position', 'toi', 
-            'goals', 'assists', 'points', 'plus_minus', 'pim', 'shots', 
-            'hits', 'blocks', 'giveaways', 'takeaways', 'faceoffs_won', 'faceoffs_lost'
-        ]
-        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-        writer.writeheader()
+        goals = sq['goals']
+        shots = sq['shots_on_goal']
+        blocks = defense['blocked_shots']
         
-        # Away team players
-        away_team = boxscore_data.get('awayTeam', {})
-        for player in away_team.get('players', []):
-            stats = player.get('stats', {})
-            row = {
-                'team': 'Away',
-                'player_id': player.get('playerId', ''),
-                'jersey_number': player.get('sweaterNumber', ''),
-                'name': f"{player.get('firstName', {}).get('default', '')} {player.get('lastName', {}).get('default', '')}",
-                'position': player.get('positionCode', ''),
-                'toi': stats.get('timeOnIce', ''),
-                'goals': stats.get('goals', 0),
-                'assists': stats.get('assists', 0),
-                'points': stats.get('goals', 0) + stats.get('assists', 0),
-                'plus_minus': stats.get('plusMinus', 0),
-                'pim': stats.get('pim', 0),
-                'shots': stats.get('shots', 0),
-                'hits': stats.get('hits', 0),
-                'blocks': stats.get('blockedShots', 0),
-                'giveaways': stats.get('giveaways', 0),
-                'takeaways': stats.get('takeaways', 0),
-                'faceoffs_won': stats.get('faceoffWins', 0),
-                'faceoffs_lost': stats.get('faceoffLosses', 0)
-            }
-            writer.writerow(row)
+        # Penalties
+        pim_for = 0
+        pim_against = 0
+        for play in self.plays:
+             if play.get('typeDescKey') == 'penalty':
+                 desc = play.get('details', {})
+                 if desc.get('eventOwnerTeamId') == team_id:
+                     pim_for += desc.get('duration', 0)
+                 else:
+                     pim_against += desc.get('duration', 0)
+                     
+        # Formula
+        gs += goals * 1.0
+        gs += shots * 0.1
+        gs += blocks * 0.05
+        gs -= (pim_for / 2) * 0.2 # Penalties hurt
+        gs += (pim_against / 2) * 0.2 # Drawing penalties helps
         
-        # Home team players
-        home_team = boxscore_data.get('homeTeam', {})
-        for player in home_team.get('players', []):
-            stats = player.get('stats', {})
-            row = {
-                'team': 'Home',
-                'player_id': player.get('playerId', ''),
-                'jersey_number': player.get('sweaterNumber', ''),
-                'name': f"{player.get('firstName', {}).get('default', '')} {player.get('lastName', {}).get('default', '')}",
-                'position': player.get('positionCode', ''),
-                'toi': stats.get('timeOnIce', ''),
-                'goals': stats.get('goals', 0),
-                'assists': stats.get('assists', 0),
-                'points': stats.get('goals', 0) + stats.get('assists', 0),
-                'plus_minus': stats.get('plusMinus', 0),
-                'pim': stats.get('pim', 0),
-                'shots': stats.get('shots', 0),
-                'hits': stats.get('hits', 0),
-                'blocks': stats.get('blockedShots', 0),
-                'giveaways': stats.get('giveaways', 0),
-                'takeaways': stats.get('takeaways', 0),
-                'faceoffs_won': stats.get('faceoffWins', 0),
-                'faceoffs_lost': stats.get('faceoffLosses', 0)
-            }
-            writer.writerow(row)
-    
-    # 3. Export Team Statistics
-    team_filename = os.path.join(output_dir, f"team_stats_{game_id}.csv")
-    with open(team_filename, 'w', newline='', encoding='utf-8') as csvfile:
-        fieldnames = [
-            'team', 'goals', 'shots', 'power_play_conversion', 'penalty_minutes',
-            'hits', 'faceoff_wins', 'blocked_shots', 'giveaways', 'takeaways'
-        ]
-        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-        writer.writeheader()
-        
-        # Away team
-        away_stats = {
-            'team': away_team.get('abbrev', 'Away'),
-            'goals': away_team.get('score', 0),
-            'shots': away_team.get('sog', 0),
-            'power_play_conversion': away_team.get('powerPlayConversion', ''),
-            'penalty_minutes': away_team.get('penaltyMinutes', 0),
-            'hits': away_team.get('hits', 0),
-            'faceoff_wins': away_team.get('faceoffWins', 0),
-            'blocked_shots': away_team.get('blockedShots', 0),
-            'giveaways': away_team.get('giveaways', 0),
-            'takeaways': away_team.get('takeaways', 0)
-        }
-        writer.writerow(away_stats)
-        
-        # Home team
-        home_stats = {
-            'team': home_team.get('abbrev', 'Home'),
-            'goals': home_team.get('score', 0),
-            'shots': home_team.get('sog', 0),
-            'power_play_conversion': home_team.get('powerPlayConversion', ''),
-            'penalty_minutes': home_team.get('penaltyMinutes', 0),
-            'hits': home_team.get('hits', 0),
-            'faceoff_wins': home_team.get('faceoffWins', 0),
-            'blocked_shots': home_team.get('blockedShots', 0),
-            'giveaways': home_team.get('giveaways', 0),
-            'takeaways': home_team.get('takeaways', 0)
-        }
-        writer.writerow(home_stats)
-    
-    # 4. Export Advanced Metrics
-    analyzer = AdvancedMetricsAnalyzer(play_by_play_data)
-    away_team_id = boxscore_data['awayTeam']['id']
-    home_team_id = boxscore_data['homeTeam']['id']
-    metrics = analyzer.generate_comprehensive_report(away_team_id, home_team_id)
-    
-    advanced_filename = os.path.join(output_dir, f"advanced_metrics_{game_id}.csv")
-    with open(advanced_filename, 'w', newline='', encoding='utf-8') as csvfile:
-        fieldnames = [
-            'team', 'metric_category', 'metric_name', 'value'
-        ]
-        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-        writer.writeheader()
-        
-        # Export metrics for both teams
-        for team_name, team_data in [('Away', metrics['away_team']), ('Home', metrics['home_team'])]:
-            # Shot Quality Metrics
-            shot_quality = team_data['shot_quality']
-            for metric, value in shot_quality.items():
-                if isinstance(value, (int, float)):
-                    writer.writerow({
-                        'team': team_name,
-                        'metric_category': 'Shot Quality',
-                        'metric_name': metric,
-                        'value': value
-                    })
-            
-            # Pressure Metrics
-            pressure = team_data['pressure']
-            for metric, value in pressure.items():
-                if isinstance(value, (int, float)):
-                    writer.writerow({
-                        'team': team_name,
-                        'metric_category': 'Pressure',
-                        'metric_name': metric,
-                        'value': value
-                    })
-            
-            # Defense Metrics
-            defense = team_data['defense']
-            for metric, value in defense.items():
-                if isinstance(value, (int, float)):
-                    writer.writerow({
-                        'team': team_name,
-                        'metric_category': 'Defense',
-                        'metric_name': metric,
-                        'value': value
-                    })
-            
-            # Cross-Ice Pass Metrics
-            cross_ice = team_data['cross_ice_passes']
-            for metric, value in cross_ice.items():
-                if isinstance(value, (int, float)):
-                    writer.writerow({
-                        'team': team_name,
-                        'metric_category': 'Cross-Ice Passes',
-                        'metric_name': metric,
-                        'value': value
-                    })
-    
-    return f"Game data exported to {output_dir}/ with {len([f for f in os.listdir(output_dir) if f.endswith('.csv')])} CSV files"
+        return round(gs, 2)
