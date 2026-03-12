@@ -1,0 +1,31 @@
+Fetching Standings and Schedule...
+Calculating Remaining Strength of Schedule (SOS)...
+
+Remaining Games: 18
+Average Opponent Point % (SOS): 0.598
+Schedule Difficulty: Brutal
+
+--- Playoff Projection (Eastern Conference) ---
+Team  Pts   GP  P%     Proj Pts  
+----------------------------------------
+CAR   88    64  0.688  112.8      
+BUF   86    65  0.662  108.5      
+TBL   82    63  0.651  106.7      
+MTL   80    63  0.635  104.1      
+PIT   79    64  0.617  101.2      <<
+BOS   78    64  0.609  99.9       
+DET   79    65  0.608  99.7       
+NYI   79    65  0.608  99.7       
+CBJ   76    64  0.594  97.4       
+OTT   73    63  0.579  95.0       
+PHI   69    63  0.548  89.8       
+WSH   71    65  0.546  89.6       
+FLA   67    64  0.523  85.8       
+NJD   66    64  0.516  84.6       
+TOR   65    65  0.500  82.0       
+NYR   60    64  0.469  76.9       
+
+Projected Cutoff (8th Place): 99.7
+
+Prediction: IN PLAYOFFS (+1.5 pts above cut)
+The Penguins are currently on pace to make it.

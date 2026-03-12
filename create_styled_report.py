@@ -3,7 +3,7 @@ import sys
 from pathlib import Path
 
 def create_styled_excel():
-    input_csv = Path('team-reports/data/players_2025_26.csv')
+    input_csv = Path('/Users/emilyfehr8/CascadeProjects/data/players_2025_26.csv')
     output_xlsx = Path.home() / 'Desktop' / 'Player_Stats_Report_2025_26.xlsx'
     
     if not input_csv.exists():
@@ -13,21 +13,75 @@ def create_styled_excel():
     # Load data
     df = pd.read_csv(input_csv)
     
-    # Identify numeric columns for aggregation
-    # We want to aggregate ALL numeric columns except 'Date'
-    numeric_df = df.select_dtypes(include=['number'])
+    # Filter out goalies
+    if 'position' in df.columns:
+        df = df[df['position'] != 'G']
+    
+    # Define columns to exclude from mean aggregation
+    exclude_cols = ['game_id', 'player_id', 'player_name', 'team', 'opponent', 'home_away', 'position', 'date']
     
     # Define aggregation dictionary
     agg_dict = {'game_id': 'count'} # Count games via game_id
     
-    # Add all numeric columns to aggregation
-    for col in numeric_df.columns:
-        if col != 'game_id' and col != 'player_id':
-             agg_dict[col] = 'mean'
+    # Identify and clean all metric columns
+    fo_cols = ['fow', 'fol']
+    move_cols = ['Lateral_Move_For', 'Longitudinal_Move_For']
+    
+    for col in df.columns:
+        if col not in exclude_cols:
+            # Force to numeric and fill NaNs with 0
+            df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0)
             
-    # Create Summary by Player
-    # "condensed into the per game averages... one row per player"
-    summary = df.groupby('player_name').agg(agg_dict).rename(columns={'game_id': 'Games'})
+            if col in fo_cols:
+                agg_dict[col] = 'sum'
+            else:
+                agg_dict[col] = 'mean'
+            
+    # Create Summary by Player (Group by ID, Name, and Team)
+    summary = df.groupby(['player_id', 'player_name', 'team']).agg(agg_dict).reset_index()
+    summary = summary.rename(columns={'game_id': 'Games'})
+    
+    # 1. Fix Faceoff % (Calculate from Totals)
+    summary['fo_pct'] = (summary['fow'] / (summary['fow'] + summary['fol']) * 100).fillna(0).round(1)
+    
+    # 2. Convert TOI to Minutes
+    if 'toi_seconds' in summary.columns:
+        summary['TOI_Min_GP'] = (summary['toi_seconds'] / 60).round(1)
+        summary = summary.drop(columns=['toi_seconds'])
+    
+    # 3. Movement Classifications
+    def classify_lateral(avg_feet):
+        if avg_feet == 0: return "Stationary"
+        elif avg_feet < 10: return "Minor"
+        elif avg_feet < 20: return "Cross-ice"
+        elif avg_feet < 35: return "Wide-lane"
+        else: return "Full-width"
+    
+    def classify_longitudinal(avg_feet):
+        if avg_feet == 0: return "Stationary"
+        elif avg_feet < 15: return "Close-range"
+        elif avg_feet < 30: return "Mid-range"
+        elif avg_feet < 50: return "Extended"
+        else: return "Long-range"
+
+    if 'Lateral_Move_For' in summary.columns:
+        summary['Lateral_Movement'] = summary['Lateral_Move_For'].apply(classify_lateral)
+        summary = summary.drop(columns=['Lateral_Move_For'])
+    
+    if 'Longitudinal_Move_For' in summary.columns:
+        summary['Vertical_Movement'] = summary['Longitudinal_Move_For'].apply(classify_longitudinal)
+        summary = summary.drop(columns=['Longitudinal_Move_For'])
+
+    # Round all remaining numeric columns
+    numeric_cols = summary.select_dtypes(include=['number']).columns
+    summary[numeric_cols] = summary[numeric_cols].round(2)
+    
+    # Calculate Shooting % if shots > 0
+    if 'goals' in summary.columns and 'shots' in summary.columns:
+        summary['Sh_Pct'] = (summary['goals'] / summary['shots'] * 100).fillna(0).round(1)
+    
+    # Set player_name as index for better readability in Excel
+    summary = summary.set_index('player_name').drop(columns=['player_id'])
     
     # Reorder columns
     # We want Identifiers (Name is index) + Games + Metrics
@@ -39,11 +93,8 @@ def create_styled_excel():
         print("xlsxwriter not found, cannot apply formatting.")
         return
 
-    # Write Summary
+    # Write Summary (Only sheet)
     summary.to_excel(writer, sheet_name='Season Averages')
-    
-    # Write Raw Data
-    df.to_excel(writer, sheet_name='Game Log', index=False)
     
     # Access Workbook / Worksheet for formatting
     workbook = writer.book

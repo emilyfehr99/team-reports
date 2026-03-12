@@ -25,21 +25,40 @@ permissions:
 jobs:
   fetch-player-data:
     runs-on: ubuntu-latest
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
     
     steps:
+      - name: Check Season Resume Date
+        run: |
+          current_date=$(date +%Y-%m-%d)
+          target_date="2026-02-25"
+          if [[ "$current_date" < "$target_date" ]]; then
+            echo "⏸️  Olympic Break: Current date $current_date is before resume date $target_date."
+            echo "Skipping workflow."
+            echo "should_run=false" >> $GITHUB_OUTPUT
+          else
+            echo "✅ Season Resumed!"
+            echo "should_run=true" >> $GITHUB_OUTPUT
+          fi
+        id: check_date
       - name: Checkout repository
-        uses: actions/checkout@v4
+        if: steps.check_date.outputs.should_run == 'true'
+        uses: actions/checkout@v6
         
       - name: Set up Python
-        uses: actions/setup-python@v5
+        if: steps.check_date.outputs.should_run == 'true'
+        uses: actions/setup-python@v6
         with:
           python-version: '3.11'
           
       - name: Install dependencies
+        if: steps.check_date.outputs.should_run == 'true'
         run: |
           pip install requests pandas
           
       - name: Fetch player data
+        if: steps.check_date.outputs.should_run == 'true'
         run: |
           MODE="${{ github.event.inputs.mode }}"
           
@@ -63,6 +82,7 @@ jobs:
           fi
           
       - name: Check for changes
+        if: steps.check_date.outputs.should_run == 'true'
         id: check_changes
         run: |
           git add data/
@@ -73,7 +93,7 @@ jobs:
           fi
           
       - name: Commit and push
-        if: steps.check_changes.outputs.changes == 'true'
+        if: steps.check_date.outputs.should_run == 'true' && steps.check_changes.outputs.changes == 'true'
         run: |
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"

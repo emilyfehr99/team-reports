@@ -1,0 +1,26 @@
+Fetching Current Standings...
+Fetching Full Remaining Schedule...
+Running 3000 High-Fidelity Simulations...
+
+======================================================================
+🏆 NHL HIGH-FIDELITY PLAYOFF PROJECTION (MAR 11)
+RECOVERING ROSTER: CROSBY/MALKIN RETURN WINDOWS & TRAVEL ACCOUNTED
+======================================================================
+Team  | Avg Pts  | Playoff %  | Status
+----------------------------------------------------------------------
+CAR   | 111.4    | 100.0     % | IN    
+BUF   | 108.1    | 99.8      % | IN    
+TBL   | 106.2    | 99.0      % | IN    
+MTL   | 103.4    | 95.3      % | IN    
+NYI   | 99.7     | 82.0      % | IN    
+DET   | 99.0     | 76.4      % | IN    
+PIT   | 98.8     | 78.4      % | IN    << PIT ALERT
+BOS   | 98.1     | 72.1      % | IN    
+CBJ   | 96.6     | 50.9      % | IN    
+OTT   | 94.8     | 38.1      % | OUT   
+PHI   | 88.9     | 2.9       % | OUT   
+WSH   | 88.9     | 4.2       % | OUT   
+FLA   | 85.8     | 0.9       % | OUT   
+NJD   | 84.6     | 0.1       % | OUT   
+TOR   | 81.1     | 0.0       % | OUT   
+NYR   | 77.8     | 0.0       % | OUT   

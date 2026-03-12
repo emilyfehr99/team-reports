@@ -1,0 +1,34 @@
+Loading Season Data from JSON...
+Fetching Current Standings...
+Calculating Deep Power Scores (Season + Metrics + Injuries)...
+Fetching Remaining Schedule...
+Running 2000 Season Simulations...
+
+============================================================
+🏒 PENINSULA COVE / NHL DEEP PLAYOFF PROJECTION (MARCH 11)
+CRISIS MODE: CROSBY & MALKIN IMPACT
+============================================================
+Team  | Avg Pts  | Playoff %  | Status
+------------------------------------------------------------
+CAR   | 111.3    | 100.0     % | IN    
+BUF   | 107.5    | 100.0     % | IN    
+TBL   | 105.7    | 99.6      % | IN    
+MTL   | 102.9    | 96.5      % | IN    
+NYI   | 100.1    | 88.2      % | IN    
+DET   | 99.2     | 83.5      % | IN    
+BOS   | 98.1     | 78.3      % | IN    
+CBJ   | 96.1     | 54.6      % | IN    
+OTT   | 95.0     | 47.7      % | OUT   
+PIT   | 93.9     | 33.6      % | OUT   << PIT ALERT
+WSH   | 89.8     | 8.7       % | OUT   
+PHI   | 89.5     | 6.4       % | OUT   
+FLA   | 86.9     | 2.3       % | OUT   
+NJD   | 85.8     | 0.6       % | OUT   
+TOR   | 81.8     | 0.0       % | OUT   
+NYR   | 78.9     | 0.0       % | OUT   
+
+--- Penguins Special Breakdown ---
+Projected Points (W/ Injury Penalty): 93.9
+Slam Dunk Likelihood: 33.6%
+Danger Zone: 66.4% chance of missing.
+Factors: -18% Power Score penalty for loss of Crosby/Malkin.

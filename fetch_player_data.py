@@ -11,6 +11,7 @@ import csv
 from pathlib import Path
 from datetime import datetime, timedelta
 import argparse
+import pandas as pd
 
 # Add current directory to path
 sys.path.append(str(Path(__file__).parent))
@@ -139,6 +140,7 @@ class PlayerDataFetcher:
                             p_pr = analyzer.calculate_pressure_metrics(team_id, player_id=player_id)
                             p_dm = analyzer.calculate_defensive_metrics(team_id, player_id=player_id)
                             p_gs = analyzer.calculate_game_score(team_id, player_id=player_id)
+                            p_fo = analyzer.calculate_faceoff_metrics(team_id, player_id=player_id)
                             
                             # Get On-Ice Metrics
                             on_ice = analyzer.get_on_ice_metrics_for_player(player_id)
@@ -202,7 +204,7 @@ class PlayerDataFetcher:
                             self._add_player_row(
                                 game_id, game_date, player, team_abbrev, opponent,
                                 home_away, 'F' if player in current_team_stats.get('forwards', []) else 'D',
-                                player_metrics, team_gf, team_ga, team_id
+                                player_metrics, team_gf, team_ga, team_id, p_fo
                             )
                         
                         # Process goalies
@@ -218,7 +220,7 @@ class PlayerDataFetcher:
         except Exception as e:
             print(f"  Error in game {game_id}: {e}")
 
-    def _add_player_row(self, game_id, date, player, team, opponent, home_away, pos, team_metrics, team_gf, team_ga, team_id):
+    def _add_player_row(self, game_id, date, player, team, opponent, home_away, pos, team_metrics, team_gf, team_ga, team_id, fo_metrics):
         """Add a skater row with comprehensive metrics."""
         player_id = player.get('playerId', 0)
         name = player.get('name', {}).get('default', 'Unknown')
@@ -232,8 +234,10 @@ class PlayerDataFetcher:
         blocks = player.get('blockedShots', 0)
         plus_minus = player.get('plusMinus', 0)
         pim = player.get('pim', 0)
-        fow = player.get('faceoffWins', 0) or 0
-        fol = player.get('faceoffLosses', 0) or 0
+        
+        # USE CALCULATED FACEOFFS
+        fow = fo_metrics.get('faceoff_wins', 0)
+        fol = fo_metrics.get('faceoff_losses', 0)
         fo_pct = round(fow / (fow + fol) * 100, 1) if (fow + fol) > 0 else 0
         giveaways = player.get('giveaways', 0) or 0
         takeaways = player.get('takeaways', 0) or 0
@@ -299,46 +303,30 @@ class PlayerDataFetcher:
         self.rows.append(row)
     
     def _add_goalie_row(self, game_id, date, player, team, opponent, home_away, team_metrics, team_gf, team_ga):
-        """Add a goalie row with relevant metrics."""
+        """Add a goalie row with relevant metrics matching skater schema."""
         player_id = player.get('playerId', 0)
         name = player.get('name', {}).get('default', 'Unknown')
         toi = self.parse_toi(player.get('toi', '0:00'))
         
-        # Parse goalie stats
-        save_shots = player.get('saveShotsAgainst', '0/0')
-        try:
-            saves = int(save_shots.split('/')[0])
-            shots_against = int(save_shots.split('/')[-1])
-        except:
-            saves = 0
-            shots_against = 0
-        
-        xg_against = round(team_metrics.get('xG_Against', 0), 3)
-        
-        # Goalie game score: saves above expected
-        gsaa = round(xg_against - (shots_against - saves), 2) if xg_against > 0 else 0
-        
-        # Build row with mostly zeros for offensive stats
+        # Build row matching STRICTLY the headers in _add_player_row
         row = [
             game_id, date, player_id, name, team, opponent, home_away, 'G',
-            toi, 0, 0, 0, 0, 0, 0,  # Basic stats
-            0, 0, 0, 0, 0,
-            # For metrics (minimal for goalies)
-            team_gf, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0,
-            0, 0, 0, 0,
-            0, 0, gsaa,
-            # Against metrics
-            team_ga, xg_against, shots_against, team_metrics.get('HDC_Against', 0), 0, 0,
-            team_metrics.get('Corsi_Against', 0), 0, 0, 0, 0,
-            0, 0, 0, 0,
-            0, 0, 0,
-            # Derived
-            0, 0
+            toi, 0, 0, 0, 0, 0, 0, # goals, assists, points, shots, hits, blocks
+            0, 0, 0, 0, 0, # plus_minus, pim, fow, fol, fo_pct
+            
+            # Metrics (Skater columns padded with 0)
+            team_gf, # GF (Goals For while on ice - technically true for goalie)
+            0, 0, 0, 0, 0, # xG_For, Shots_For, HDC_For, Blocks_For, Hits_For
+            0, 0, 0, 0, 0, # Corsi_For, OZ, NZ, DZ, Rush
+            0, 0, 0, 0, # ENtoS, EXtoEN, Giveaways, Takeaways
+            0, 0, 0, # Lat, Long, GameScore
+            
+            # Derived Pct
+            0, 0 # Corsi_Pct, xG_Pct
         ]
         self.rows.append(row)
     
-    def fetch_date_range(self, start_date: str, end_date: str):
+    def fetch_date_range(self, start_date: str, end_date: str, output_path: str = None):
         """Fetch all games in a date range."""
         current = datetime.strptime(start_date, '%Y-%m-%d')
         end = datetime.strptime(end_date, '%Y-%m-%d')
@@ -353,6 +341,11 @@ class PlayerDataFetcher:
             for gid in game_ids:
                 self.process_game(gid)
             
+            # Save incrementally after each day if output_path provided
+            if output_path and self.rows:
+                self.save_to_csv(output_path)
+                self.rows = [] # Clear for next day
+            
             current += timedelta(days=1)
     
     def save_to_csv(self, output_path: str):
@@ -361,17 +354,32 @@ class PlayerDataFetcher:
         output.parent.mkdir(parents=True, exist_ok=True)
         
         file_exists = output.exists()
-        mode = 'a' if file_exists else 'w'
         
-        # If appending, check for duplicates to avoid re-adding satisfied games
-        if file_exists and self.rows:
+        # If no new rows, exit early
+        if not self.rows:
+            print("No new rows to save.")
+            return
+
+        # Handle Overwrite Logic
+        if file_exists and getattr(self, 'overwrite', False):
+            print(f"Overwriting data for games in existing file: {output}")
+            # Load existing CSV
+            existing_df = pd.read_csv(output)
+            # Remove games that we just fetched to allow updating them
+            new_game_ids = set(str(r[0]) for r in self.rows)
+            existing_df = existing_df[~existing_df['game_id'].astype(str).isin(new_game_ids)]
+            # Write back the remaining data
+            existing_df.to_csv(output, index=False)
+            mode = 'a'
+        elif file_exists:
+            # Traditional duplicate check (skip already existing games)
             try:
                 existing_game_ids = set()
                 with open(output, 'r', encoding='utf-8') as f:
                     reader = csv.DictReader(f)
                     for row in reader:
                         if 'game_id' in row:
-                            existing_game_ids.add(row['game_id'])
+                            existing_game_ids.add(str(row['game_id']))
                 
                 # Filter out rows that are already in the CSV
                 original_count = len(self.rows)
@@ -382,14 +390,18 @@ class PlayerDataFetcher:
                     print(f"Skipped {original_count - filtered_count} duplicate rows (games already in CSV)")
             except Exception as e:
                 print(f"Warning: Error checking for duplicates: {e}")
+            mode = 'a'
+        else:
+            mode = 'w'
 
+        # If nothing left to write after filtering
         if not self.rows:
-            print("No new rows to save.")
+            print("No new/unique games to save.")
             return
 
         with open(output, mode, newline='') as f:
             writer = csv.writer(f)
-            if not file_exists:
+            if mode == 'w' or not file_exists:
                 writer.writerow(self.HEADERS)
             writer.writerows(self.rows)
         
@@ -403,23 +415,27 @@ def main():
     parser.add_argument('--end', help='End date for range')
     parser.add_argument('--yesterday', action='store_true', help='Fetch yesterday\'s games')
     parser.add_argument('--output', default='data/players_2025_26.csv', help='Output CSV path')
+    parser.add_argument('--overwrite', action='store_true', help='Overwrite existing games in CSV')
     
     args = parser.parse_args()
     
     fetcher = PlayerDataFetcher()
+    fetcher.overwrite = args.overwrite
     
     if args.yesterday:
         yesterday = (datetime.now() - timedelta(days=1)).strftime('%Y-%m-%d')
-        fetcher.fetch_date_range(yesterday, yesterday)
+        fetcher.fetch_date_range(yesterday, yesterday, args.output)
     elif args.date:
-        fetcher.fetch_date_range(args.date, args.date)
+        fetcher.fetch_date_range(args.date, args.date, args.output)
     elif args.start and args.end:
-        fetcher.fetch_date_range(args.start, args.end)
+        fetcher.fetch_date_range(args.start, args.end, args.output)
     else:
         print("Please specify --date, --start/--end, or --yesterday")
         sys.exit(1)
     
-    fetcher.save_to_csv(args.output)
+    # Final save just in case (though fetch_date_range now saves internally)
+    if fetcher.rows:
+        fetcher.save_to_csv(args.output)
 
 
 if __name__ == '__main__':

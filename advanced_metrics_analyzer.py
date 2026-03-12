@@ -506,10 +506,20 @@ class AdvancedMetricsAnalyzer:
                 # Count distinct sequences
                 if player_involved:
                     pressure['offensive_zone_sequences'] += 1
+                
+                # Quick Strike (Rush Shot) Logic:
+                # If this event is a shot and it happened shortly after entering the zone
+                if player_involved and play.get('typeDescKey') in ['shot-on-goal', 'goal', 'missed-shot']:
+                    # Look back to see if we transitioned from N or D within 5 seconds
+                    for j in range(max(0, self.plays.index(play)-5), self.plays.index(play)):
+                        prev_play = self.plays[j]
+                        if prev_play.get('details', {}).get('zoneCode') in ['N', 'D'] and \
+                           prev_play.get('details', {}).get('eventOwnerTeamId') == team_id and \
+                           current_time - self._time_to_seconds(prev_play.get('timeInPeriod', '00:00')) <= 5:
+                            pressure['quick_strike_opportunities'] += 1
+                            break
+
             elif zone == 'N':
-                # Check for quick strike (Neutral zone to Offensive action)
-                # This is hard to attribute to a single player without more complex logic tracking puck carriers.
-                # Simplified: If player takes a shot/action in OZ shortly after NZ event.
                 consecutive_oz_events = 0
                 
             last_event_time = current_time
@@ -795,6 +805,36 @@ class AdvancedMetricsAnalyzer:
                             break
                             
         return transitions
+
+    def calculate_faceoff_metrics(self, team_id: int, player_id: int = None) -> dict:
+        """Calculate faceoff wins and losses from play-by-play data"""
+        fo_stats = {'faceoff_wins': 0, 'faceoff_losses': 0}
+        
+        for play in self.plays:
+            if play.get('typeDescKey') != 'faceoff':
+                continue
+                
+            details = play.get('details', {})
+            
+            # If winningPlayerId or losingPlayerId matches player_id
+            if player_id:
+                if details.get('winningPlayerId') == player_id:
+                    fo_stats['faceoff_wins'] += 1
+                elif details.get('losingPlayerId') == player_id:
+                    fo_stats['faceoff_losses'] += 1
+            else:
+                # Team level stats
+                winner_team = details.get('eventOwnerTeamId')
+                if winner_team == team_id:
+                    fo_stats['faceoff_wins'] += 1
+                else:
+                    # In a faceoff, if the eventOwnerTeamId is NOT team_id, and it was a faceoff,
+                    # the other team must have won it. (Actually eventOwnerTeamId is the winner's team)
+                    # We need to be careful if it's a teammate of the winner.
+                    # Usually eventOwnerTeamId is the winning team for a faceoff.
+                    pass 
+                    
+        return fo_stats
 
     def calculate_game_score(self, team_id: int, player_id: int = None) -> float:
         """

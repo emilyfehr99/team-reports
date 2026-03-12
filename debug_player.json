@@ -1,0 +1,26 @@
+{
+  "playerId": 8481601,
+  "sweaterNumber": 10,
+  "name": {
+    "default": "S. Holmstrom",
+    "cs": "S. Holmstr\u00f6m",
+    "fi": "S. Holmstr\u00f6m",
+    "sk": "S. Holmstr\u00f6m",
+    "sv": "S. Holmstr\u00f6m"
+  },
+  "position": "R",
+  "goals": 0,
+  "assists": 0,
+  "points": 0,
+  "plusMinus": -2,
+  "pim": 0,
+  "hits": 0,
+  "powerPlayGoals": 0,
+  "sog": 1,
+  "faceoffWinningPctg": 0.0,
+  "toi": "19:51",
+  "blockedShots": 0,
+  "shifts": 23,
+  "giveaways": 0,
+  "takeaways": 0
+}

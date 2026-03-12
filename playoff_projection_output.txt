@@ -1,0 +1,559 @@
+Fetching Current Standings...
+Found 32 teams total.
+
+Calculating Team Power Scores (based on last 5 games)...
+This requires analyzing play-by-play data for recent games.
+  Analyzing COL...Debug - Game Center data: True
+Debug - Boxscore data: True
+Debug - Play-by-play data: True
+Debug - Game Center data: True
+Debug - Boxscore data: True
+Debug - Play-by-play data: True
+Debug - Game Center data: True
+Debug - Boxscore data: True
+Debug - Play-by-play data: True
+Debug - Game Center data: True
+Debug - Boxscore data: True
+Debug - Play-by-play data: True
+Debug - Game Center data: True
+Debug - Boxscore data: True
+Debug - Play-by-play data: True
+ Score: 0.667
+  Analyzing DAL...Debug - Game Center data: True
+Debug - Boxscore data: True
+Debug - Play-by-play data: True
+Debug - Game Center data: True
+Debug - Boxscore data: True
+Debug - Play-by-play data: True
+Debug - Game Center data: True
+Debug - Boxscore data: True
+Debug - Play-by-play data: True
+Debug - Game Center data: True
+Debug - Boxscore data: True
+Debug - Play-by-play data: True
+Debug - Game Center data: True
+Debug - Boxscore data: True
+Debug - Play-by-play data: True
+ Score: 0.582
+  Analyzing CAR...Debug - Game Center data: True
+Debug - Boxscore data: True
+Debug - Play-by-play data: True
+Debug - Game Center data: True
+Debug - Boxscore data: True
+Debug - Play-by-play data: True
+Debug - Game Center data: True
+Debug - Boxscore data: True
+Debug - Play-by-play data: True
+Debug - Game Center data: True
+Debug - Boxscore data: True
+Debug - Play-by-play data: True
+Debug - Game Center data: True
+Debug - Boxscore data: True
+Debug - Play-by-play data: True
+ Score: 0.723
+  Analyzing MIN...Debug - Game Center data: True
+Debug - Boxscore data: True
+Debug - Play-by-play data: True
+Debug - Game Center data: True
+Debug - Boxscore data: True
+Debug - Play-by-play data: True
+Debug - Game Center data: True
+Debug - Boxscore data: True
+Debug - Play-by-play data: True
+Debug - Game Center data: True
+Debug - Boxscore data: True
+Debug - Play-by-play data: True
+Debug - Game Center data: True
+Debug - Boxscore data: True
+Debug - Play-by-play data: True
+ Score: 0.582
+  Analyzing TBL...Debug - Game Center data: True
+Debug - Boxscore data: True
+Debug - Play-by-play data: True
+Debug - Game Center data: True
+Debug - Boxscore data: True
+Debug - Play-by-play data: True
+Debug - Game Center data: True
+Debug - Boxscore data: True
+Debug - Play-by-play data: True
+Debug - Game Center data: True
+Debug - Boxscore data: True
+Debug - Play-by-play data: True
+Debug - Game Center data: True
+Debug - Boxscore data: True
+Debug - Play-by-play data: True
+ Score: 0.533
+  Analyzing BUF...Debug - Game Center data: True
+Debug - Boxscore data: True
+Debug - Play-by-play data: True
+Debug - Game Center data: True
+Debug - Boxscore data: True
+Debug - Play-by-play data: True
+Debug - Game Center data: True
+Debug - Boxscore data: True
+Debug - Play-by-play data: True
+Debug - Game Center data: True
+Debug - Boxscore data: True
+Debug - Play-by-play data: True
+Debug - Game Center data: True
+Debug - Boxscore data: True
+Debug - Play-by-play data: True
+ Score: 0.595
+  Analyzing DET...Debug - Game Center data: True
+Debug - Boxscore data: True
+Debug - Play-by-play data: True
+Debug - Game Center data: True
+Debug - Boxscore data: True
+Debug - Play-by-play data: True
+Debug - Game Center data: True
+Debug - Boxscore data: True
+Debug - Play-by-play data: True
+Debug - Game Center data: True
+Debug - Boxscore data: True
+Debug - Play-by-play data: True
+Debug - Game Center data: True
+Debug - Boxscore data: True
+Debug - Play-by-play data: True
+ Score: 0.512
+  Analyzing MTL...Debug - Game Center data: True
+Debug - Boxscore data: True
+Debug - Play-by-play data: True
+Debug - Game Center data: True
+Debug - Boxscore data: True
+Debug - Play-by-play data: True
+Debug - Game Center data: True
+Debug - Boxscore data: True
+Debug - Play-by-play data: True
+Debug - Game Center data: True
+Debug - Boxscore data: True
+Debug - Play-by-play data: True
+Debug - Game Center data: True
+Debug - Boxscore data: True
+Debug - Play-by-play data: True
+ Score: 0.678
+  Analyzing PIT...Debug - Game Center data: True
+Debug - Boxscore data: True
+Debug - Play-by-play data: True
+Debug - Game Center data: True
+Debug - Boxscore data: True
+Debug - Play-by-play data: True
+Debug - Game Center data: True
+Debug - Boxscore data: True
+Debug - Play-by-play data: True
+Debug - Game Center data: True
+Debug - Boxscore data: True
+Debug - Play-by-play data: True
+Debug - Game Center data: True
+Debug - Boxscore data: True
+Debug - Play-by-play data: True
+ Score: 0.501
+  Analyzing NYI...Debug - Game Center data: True
+Debug - Boxscore data: True
+Debug - Play-by-play data: True
+Debug - Game Center data: True
+Debug - Boxscore data: True
+Debug - Play-by-play data: True
+Debug - Game Center data: True
+Debug - Boxscore data: True
+Debug - Play-by-play data: True
+Debug - Game Center data: True
+Debug - Boxscore data: True
+Debug - Play-by-play data: True
+Debug - Game Center data: True
+Debug - Boxscore data: True
+Debug - Play-by-play data: True
+ Score: 0.583
+  Analyzing BOS...Debug - Game Center data: True
+Debug - Boxscore data: True
+Debug - Play-by-play data: True
+Debug - Game Center data: True
+Debug - Boxscore data: True
+Debug - Play-by-play data: True
+Debug - Game Center data: True
+Debug - Boxscore data: True
+Debug - Play-by-play data: True
+Debug - Game Center data: True
+Debug - Boxscore data: True
+Debug - Play-by-play data: True
+Debug - Game Center data: True
+Debug - Boxscore data: True
+Debug - Play-by-play data: True
+ Score: 0.581
+  Analyzing ANA...Debug - Game Center data: True
+Debug - Boxscore data: True
+Debug - Play-by-play data: True
+Debug - Game Center data: True
+Debug - Boxscore data: True
+Debug - Play-by-play data: True
+Debug - Game Center data: True
+Debug - Boxscore data: True
+Debug - Play-by-play data: True
+Debug - Game Center data: True
+Debug - Boxscore data: True
+Debug - Play-by-play data: True
+Debug - Game Center data: True
+Debug - Boxscore data: True
+Debug - Play-by-play data: True
+ Score: 0.626
+  Analyzing CBJ...Debug - Game Center data: True
+Debug - Boxscore data: True
+Debug - Play-by-play data: True
+Debug - Game Center data: True
+Debug - Boxscore data: True
+Debug - Play-by-play data: True
+Debug - Game Center data: True
+Debug - Boxscore data: True
+Debug - Play-by-play data: True
+Debug - Game Center data: True
+Debug - Boxscore data: True
+Debug - Play-by-play data: True
+Debug - Game Center data: True
+Debug - Boxscore data: True
+Debug - Play-by-play data: True
+ Score: 0.556
+  Analyzing VGK...Debug - Game Center data: True
+Debug - Boxscore data: True
+Debug - Play-by-play data: True
+Debug - Game Center data: True
+Debug - Boxscore data: True
+Debug - Play-by-play data: True
+Debug - Game Center data: True
+Debug - Boxscore data: True
+Debug - Play-by-play data: True
+Debug - Game Center data: True
+Debug - Boxscore data: True
+Debug - Play-by-play data: True
+Debug - Game Center data: True
+Debug - Boxscore data: True
+Debug - Play-by-play data: True
+ Score: 0.563
+  Analyzing UTA... No data.
+  Analyzing OTT...Debug - Game Center data: True
+Debug - Boxscore data: True
+Debug - Play-by-play data: True
+Debug - Game Center data: True
+Debug - Boxscore data: True
+Debug - Play-by-play data: True
+Debug - Game Center data: True
+Debug - Boxscore data: True
+Debug - Play-by-play data: True
+Debug - Game Center data: True
+Debug - Boxscore data: True
+Debug - Play-by-play data: True
+Debug - Game Center data: True
+Debug - Boxscore data: True
+Debug - Play-by-play data: True
+ Score: 0.629
+  Analyzing WSH...Debug - Game Center data: True
+Debug - Boxscore data: True
+Debug - Play-by-play data: True
+Debug - Game Center data: True
+Debug - Boxscore data: True
+Debug - Play-by-play data: True
+Debug - Game Center data: True
+Debug - Boxscore data: True
+Debug - Play-by-play data: True
+Debug - Game Center data: True
+Debug - Boxscore data: True
+Debug - Play-by-play data: True
+Debug - Game Center data: True
+Debug - Boxscore data: True
+Debug - Play-by-play data: True
+ Score: 0.482
+  Analyzing EDM...Debug - Game Center data: True
+Debug - Boxscore data: True
+Debug - Play-by-play data: True
+Debug - Game Center data: True
+Debug - Boxscore data: True
+Debug - Play-by-play data: True
+Debug - Game Center data: True
+Debug - Boxscore data: True
+Debug - Play-by-play data: True
+Debug - Game Center data: True
+Debug - Boxscore data: True
+Debug - Play-by-play data: True
+Debug - Game Center data: True
+Debug - Boxscore data: True
+Debug - Play-by-play data: True
+ Score: 0.515
+  Analyzing SEA...Debug - Game Center data: True
+Debug - Boxscore data: True
+Debug - Play-by-play data: True
+Debug - Game Center data: True
+Debug - Boxscore data: True
+Debug - Play-by-play data: True
+Debug - Game Center data: True
+Debug - Boxscore data: True
+Debug - Play-by-play data: True
+Debug - Game Center data: True
+Debug - Boxscore data: True
+Debug - Play-by-play data: True
+Debug - Game Center data: True
+Debug - Boxscore data: True
+Debug - Play-by-play data: True
+ Score: 0.524
+  Analyzing PHI...Debug - Game Center data: True
+Debug - Boxscore data: True
+Debug - Play-by-play data: True
+Debug - Game Center data: True
+Debug - Boxscore data: True
+Debug - Play-by-play data: True
+Debug - Game Center data: True
+Debug - Boxscore data: True
+Debug - Play-by-play data: True
+Debug - Game Center data: True
+Debug - Boxscore data: True
+Debug - Play-by-play data: True
+Debug - Game Center data: True
+Debug - Boxscore data: True
+Debug - Play-by-play data: True
+ Score: 0.492
+  Analyzing SJS...Debug - Game Center data: True
+Debug - Boxscore data: True
+Debug - Play-by-play data: True
+Debug - Game Center data: True
+Debug - Boxscore data: True
+Debug - Play-by-play data: True
+Debug - Game Center data: True
+Debug - Boxscore data: True
+Debug - Play-by-play data: True
+Debug - Game Center data: True
+Debug - Boxscore data: True
+Debug - Play-by-play data: True
+Debug - Game Center data: True
+Debug - Boxscore data: True
+Debug - Play-by-play data: True
+ Score: 0.619
+  Analyzing FLA...Debug - Game Center data: True
+Debug - Boxscore data: True
+Debug - Play-by-play data: True
+Debug - Game Center data: True
+Debug - Boxscore data: True
+Debug - Play-by-play data: True
+Debug - Game Center data: True
+Debug - Boxscore data: True
+Debug - Play-by-play data: True
+Debug - Game Center data: True
+Debug - Boxscore data: True
+Debug - Play-by-play data: True
+Debug - Game Center data: True
+Debug - Boxscore data: True
+Debug - Play-by-play data: True
+ Score: 0.565
+  Analyzing TOR...Debug - Game Center data: True
+Debug - Boxscore data: True
+Debug - Play-by-play data: True
+Debug - Game Center data: True
+Debug - Boxscore data: True
+Debug - Play-by-play data: True
+Debug - Game Center data: True
+Debug - Boxscore data: True
+Debug - Play-by-play data: True
+Debug - Game Center data: True
+Debug - Boxscore data: True
+Debug - Play-by-play data: True
+Debug - Game Center data: True
+Debug - Boxscore data: True
+Debug - Play-by-play data: True
+ Score: 0.503
+  Analyzing LAK...Debug - Game Center data: True
+Debug - Boxscore data: True
+Debug - Play-by-play data: True
+Debug - Game Center data: True
+Debug - Boxscore data: True
+Debug - Play-by-play data: True
+Debug - Game Center data: True
+Debug - Boxscore data: True
+Debug - Play-by-play data: True
+Debug - Game Center data: True
+Debug - Boxscore data: True
+Debug - Play-by-play data: True
+Debug - Game Center data: True
+Debug - Boxscore data: True
+Debug - Play-by-play data: True
+ Score: 0.573
+  Analyzing NSH...Debug - Game Center data: True
+Debug - Boxscore data: True
+Debug - Play-by-play data: True
+Debug - Game Center data: True
+Debug - Boxscore data: True
+Debug - Play-by-play data: True
+Debug - Game Center data: True
+Debug - Boxscore data: True
+Debug - Play-by-play data: True
+Debug - Game Center data: True
+Debug - Boxscore data: True
+Debug - Play-by-play data: True
+Debug - Game Center data: True
+Debug - Boxscore data: True
+Debug - Play-by-play data: True
+ Score: 0.597
+  Analyzing NJD...Debug - Game Center data: True
+Debug - Boxscore data: True
+Debug - Play-by-play data: True
+Debug - Game Center data: True
+Debug - Boxscore data: True
+Debug - Play-by-play data: True
+Debug - Game Center data: True
+Debug - Boxscore data: True
+Debug - Play-by-play data: True
+Debug - Game Center data: True
+Debug - Boxscore data: True
+Debug - Play-by-play data: True
+Debug - Game Center data: True
+Debug - Boxscore data: True
+Debug - Play-by-play data: True
+ Score: 0.710
+  Analyzing WPG...Debug - Game Center data: True
+Debug - Boxscore data: True
+Debug - Play-by-play data: True
+Debug - Game Center data: True
+Debug - Boxscore data: True
+Debug - Play-by-play data: True
+Debug - Game Center data: True
+Debug - Boxscore data: True
+Debug - Play-by-play data: True
+Debug - Game Center data: True
+Debug - Boxscore data: True
+Debug - Play-by-play data: True
+Debug - Game Center data: True
+Debug - Boxscore data: True
+Debug - Play-by-play data: True
+ Score: 0.562
+  Analyzing STL...Debug - Game Center data: True
+Debug - Boxscore data: True
+Debug - Play-by-play data: True
+Debug - Game Center data: True
+Debug - Boxscore data: True
+Debug - Play-by-play data: True
+Debug - Game Center data: True
+Debug - Boxscore data: True
+Debug - Play-by-play data: True
+Debug - Game Center data: True
+Debug - Boxscore data: True
+Debug - Play-by-play data: True
+Debug - Game Center data: True
+Debug - Boxscore data: True
+Debug - Play-by-play data: True
+ Score: 0.467
+  Analyzing NYR...Debug - Game Center data: True
+Debug - Boxscore data: True
+Debug - Play-by-play data: True
+Debug - Game Center data: True
+Debug - Boxscore data: True
+Debug - Play-by-play data: True
+Debug - Game Center data: True
+Debug - Boxscore data: True
+Debug - Play-by-play data: True
+Debug - Game Center data: True
+Debug - Boxscore data: True
+Debug - Play-by-play data: True
+Debug - Game Center data: True
+Debug - Boxscore data: True
+Debug - Play-by-play data: True
+ Score: 0.666
+  Analyzing CHI...Debug - Game Center data: True
+Debug - Boxscore data: True
+Debug - Play-by-play data: True
+Debug - Game Center data: True
+Debug - Boxscore data: True
+Debug - Play-by-play data: True
+Debug - Game Center data: True
+Debug - Boxscore data: True
+Debug - Play-by-play data: True
+Debug - Game Center data: True
+Debug - Boxscore data: True
+Debug - Play-by-play data: True
+Debug - Game Center data: True
+Debug - Boxscore data: True
+Debug - Play-by-play data: True
+ Score: 0.528
+  Analyzing CGY...Debug - Game Center data: True
+Debug - Boxscore data: True
+Debug - Play-by-play data: True
+Debug - Game Center data: True
+Debug - Boxscore data: True
+Debug - Play-by-play data: True
+Debug - Game Center data: True
+Debug - Boxscore data: True
+Debug - Play-by-play data: True
+Debug - Game Center data: True
+Debug - Boxscore data: True
+Debug - Play-by-play data: True
+Debug - Game Center data: True
+Debug - Boxscore data: True
+Debug - Play-by-play data: True
+ Score: 0.395
+  Analyzing VAN...Debug - Game Center data: True
+Debug - Boxscore data: True
+Debug - Play-by-play data: True
+Debug - Game Center data: True
+Debug - Boxscore data: True
+Debug - Play-by-play data: True
+Debug - Game Center data: True
+Debug - Boxscore data: True
+Debug - Play-by-play data: True
+Debug - Game Center data: True
+Debug - Boxscore data: True
+Debug - Play-by-play data: True
+Debug - Game Center data: True
+Debug - Boxscore data: True
+Debug - Play-by-play data: True
+ Score: 0.573
+
+Fetching Remaining Schedule (ALL Teams)...
+Found 324 remaining games.
+
+Simulating Season with Contextual Adjustments...
+
+=== FINAL PROJECTED PLAYOFF PICTURE ===
+Based on Advanced Metrics Power Score & Schedule Simulation
+
+
+>> EASTERN CONFERENCE <<
+Rank Team  Proj Pts   Power Score  Slot      
+------------------------------------------------------------
+ATLANTIC DIVISION
+1    BUF   103.8      0.595   A1         
+2    TAM   103.1      0.533   A2         
+3    MON   102.7      0.678   A3         
+
+METROPOLITAN DIVISION
+1    CAR   114.1      0.723   M1         
+2    NEW   97.1      0.583   M2         
+3    PIT   95.3      0.501   M3         <<
+
+WILD CARDS
+1    DET   96.5      0.512   WC1        
+2    BOS   96.2      0.581   WC2        
+
+IN THE HUNT
+3    OTT   94.9      0.629   Out        
+4    COL   94.5      0.556   Out        
+5    NEW   91.1      0.710   Out        
+
+>> WESTERN CONFERENCE <<
+Rank Team  Proj Pts   Power Score  Slot      
+------------------------------------------------------------
+CENTRAL DIVISION
+1    COL   122.3      0.667   C1         
+2    DAL   109.4      0.582   C2         
+3    MIN   106.3      0.582   C3         
+
+PACIFIC DIVISION
+1    ANA   98.8      0.626   P1         
+2    VEG   94.3      0.563   P2         
+3    SAN   91.3      0.619   P3         
+
+WILD CARDS
+1    UTA   91.0      0.500   WC1        
+2    SEA   88.6      0.524   WC2        
+
+IN THE HUNT
+3    LOS   87.7      0.573   Out        
+4    EDM   87.4      0.515   Out        
+5    NAS   86.4      0.597   Out        
+
+Penguins Status Check:
+Projected Points: 95.3
+Conf Rank: 8
