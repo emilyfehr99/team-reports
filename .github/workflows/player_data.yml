@@ -31,17 +31,30 @@ jobs:
       PYTHONPATH: "."
     
     steps:
-      - name: Check Season Resume Date
+      - name: Check Active Schedule
         run: |
-          current_date=$(date +%Y-%m-%d)
-          target_date="2026-02-25"
-          if [[ "$current_date" < "$target_date" ]]; then
-            echo "⏸️  Olympic Break: Current date $current_date is before resume date $target_date."
-            echo "Skipping workflow."
-            echo "should_run=false" >> $GITHUB_OUTPUT
-          else
-            echo "✅ Season Resumed!"
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            echo "✅ Manual Dispatch Triggered!"
             echo "should_run=true" >> $GITHUB_OUTPUT
+          else
+            has_games=$(python3 -c "
+            import urllib.request, json
+            try:
+                req = urllib.request.Request('https://api-web.nhle.com/v1/schedule/now', headers={'User-Agent': 'Mozilla/5.0'})
+                with urllib.request.urlopen(req, timeout=10) as r:
+                    data = json.loads(r.read().decode('utf-8'))
+                has_games = any(bool(day.get('games')) for day in (data.get('gameWeek') or []))
+                print('true' if has_games else 'false')
+            except Exception as e:
+                print('true')
+            " 2>/dev/null || echo "true")
+            if [[ "$has_games" == "true" ]]; then
+              echo "✅ Active games scheduled in current gameWeek!"
+              echo "should_run=true" >> $GITHUB_OUTPUT
+            else
+              echo "⏸️ No games scheduled for active week. Skipping run."
+              echo "should_run=false" >> $GITHUB_OUTPUT
+            fi
           fi
         id: check_date
       - name: Checkout repository
@@ -70,8 +83,8 @@ jobs:
           fi
           
           if [ "$MODE" = "full_season" ]; then
-            # Full season: Oct 7, 2025 to yesterday
-            START_DATE="2025-10-07"
+            START_YEAR=$(python3 -c "from datetime import datetime; n=datetime.now(); print(n.year if n.month >= 7 else n.year-1)")
+            START_DATE="${START_YEAR}-10-01"
             END_DATE=$(date -d "yesterday" +%Y-%m-%d 2>/dev/null || date -v-1d +%Y-%m-%d)
             echo "Running full season backfill from $START_DATE to $END_DATE"
             python fetch_player_data.py --start $START_DATE --end $END_DATE

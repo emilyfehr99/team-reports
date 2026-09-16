@@ -408,13 +408,23 @@ class PlayerDataFetcher:
         print(f"\nSaved {len(self.rows)} player-game rows to {output}")
 
 
+def _get_default_output_path() -> str:
+    now = datetime.now()
+    year = now.year
+    if now.month >= 7:
+        start_year, end_year = year, year + 1
+    else:
+        start_year, end_year = year - 1, year
+    return f"data/players_{start_year}_{str(end_year)[-2:]}.csv"
+
+
 def main():
     parser = argparse.ArgumentParser(description='Fetch NHL player data')
     parser.add_argument('--date', help='Single date (YYYY-MM-DD)')
     parser.add_argument('--start', help='Start date for range')
     parser.add_argument('--end', help='End date for range')
     parser.add_argument('--yesterday', action='store_true', help='Fetch yesterday\'s games')
-    parser.add_argument('--output', default='data/players_2025_26.csv', help='Output CSV path')
+    parser.add_argument('--output', default=_get_default_output_path(), help='Output CSV path')
     parser.add_argument('--overwrite', action='store_true', help='Overwrite existing games in CSV')
     
     args = parser.parse_args()
