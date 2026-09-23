@@ -386,7 +386,7 @@ class PostGameReportGenerator:
                         
                 except (KeyError, TypeError):
                     # If we can't get real data, use sample data
-                    game_date = "2024-06-15"
+                    game_date = datetime.now().strftime('%Y-%m-%d')
                     away_score = 3
                     home_score = 2
                     winner = away_team
