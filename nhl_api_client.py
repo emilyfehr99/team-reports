@@ -123,7 +123,7 @@ class NHLAPIClient:
         
         game_center = {
             'game': {
-                'gameDate': boxscore.get('gameDate', '2025-10-07'),
+                'gameDate': boxscore.get('gameDate') or datetime.now().strftime('%Y-%m-%d'),
                 'awayTeamScore': boxscore.get('awayTeam', {}).get('score', 0),
                 'homeTeamScore': boxscore.get('homeTeam', {}).get('score', 0),
                 'awayTeamScoreByPeriod': [0, 0, 0, 0],

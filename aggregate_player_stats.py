@@ -2,9 +2,23 @@
 import pandas as pd
 import os
 
+import glob
+from datetime import datetime
+
+def _find_latest_players_csv() -> tuple[str, str]:
+    matches = sorted(glob.glob("data/players_*.csv"), reverse=True)
+    if matches:
+        in_path = matches[0]
+        base = os.path.basename(in_path).replace("players_", "player_averages_")
+        out_path = os.path.join("data", base)
+        return in_path, out_path
+    now = datetime.now()
+    yr = now.year if now.month >= 7 else now.year - 1
+    tag = f"{yr}_{str(yr+1)[-2:]}"
+    return f"data/players_{tag}.csv", f"data/player_averages_{tag}.csv"
+
 def aggregate_data():
-    input_path = "data/players_2025_26.csv"
-    output_path = "data/player_averages_2025_26.csv"
+    input_path, output_path = _find_latest_players_csv()
     
     if not os.path.exists(input_path):
         print(f"Error: {input_path} not found.")
