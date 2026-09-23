@@ -2,8 +2,8 @@ name: Fetch Player Data
 
 on:
   schedule:
-    # Run daily at 11:00 UTC (6:00 AM EST)
-    - cron: '0 11 * * *'
+    # Run daily at 09:00 UTC (4:00 AM CDT / 3:00 AM CST) to finish well before 7:00 AM Central
+    - cron: '0 9 * * *'
   workflow_dispatch:
     inputs:
       mode:
